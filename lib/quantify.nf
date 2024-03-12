@@ -34,14 +34,13 @@ process FeatureCount {
 
 process CleanFeatureCountTable {
     label "nanoporeata"
-    publishDir "${params.output_dir}", mode: "copy"
+    //publishDir "${params.output_dir}", mode: "copy"
     maxForks 1
     input:
         tuple val(ID),path(single_fc)
         path metadata
     output:
         path("feature_counts_${ID}_${task.index}.csv"), emit: clean_fc
-        path("feature_counts_${ID}_${task.index}.csv")
     script:
     """
     python ${projectDir}/bin/initialize_fc_merge.py --input $single_fc --metadata $metadata
@@ -118,14 +117,13 @@ process Salmon{
 
 process CleanSalmonTable{
     label "nanoporeata"
-    publishDir "${params.output_dir}", mode: "copy"
+    //publishDir "${params.output_dir}", mode: "copy"
     maxForks 1
     input:
         tuple val(ID),path(single_salmon)
         path metadata
     output:
         path("salmon_${ID}_${task.index}.csv"), emit: clean_salmon
-        path("salmon_${ID}_${task.index}.csv")
     script:
     """
     python ${projectDir}/bin/initialize_salmon_merge.py --input ${single_salmon}/quant.sf --metadata ${metadata}
@@ -197,4 +195,36 @@ process DESeq2Genome {
     """
     Rscript ${projectDir}/bin/nf_dea_function.R $metadata "gene" $count_table $task.cpus DDS_genes.R 
     """
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                                                                                         // 
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                 Update iterator                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+//                                                                                                                                                         //
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+process UpdateIterator{
+    input:
+    path feature_count_merged
+
+    output:
+    path(feature_count_merged), emit: merged_csv
+    val(run_statistics), emit: run_statistics
+
+    script:
+    if (iterator.value % ${params.batchsize} == 0){
+        run_statistics = 1
+    }
+    else{
+        run_statistics = 0
+    }
+    iterator.value = iterator.value + 1
+    println iterator.value
+
 }

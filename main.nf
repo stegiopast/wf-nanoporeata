@@ -1,7 +1,5 @@
 #!/usr/bin/env nextflow
 
-//Clean main to start coding
-
 import groovy.json.JsonBuilder
 import nextflow.util.BlankSeparatedList
 nextflow.enable.dsl = 2
@@ -19,10 +17,15 @@ nextflow.preview.recursion=true
 
 include { ConvertGtfToDf; start_watch_path } from "./lib/initialize.nf"
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
-include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome } from "./lib/quantify.nf"
+include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; UpdateIterator } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
 
+class IntObj{
+    public int value = 0
+}
 
+iterator = new IntObj()
+iterator.value = 1
 
 
 
@@ -41,6 +44,7 @@ workflow {
     cleaned_fc = CleanFeatureCountTable(fc_output.single_fc_df, file("${params.metadata}"))
     UpdateFeatureCountTable.scan(cleaned_fc.clean_fc)
     PublishFeatureCountTable(UpdateFeatureCountTable.out)
+    UpdateIterator(PublishFeatureCountTable.out)
     //DESeq2Genome(PublishFeatureCountTable.out.merged_csv,file("${params.metadata}"))
 
 
@@ -50,6 +54,7 @@ workflow {
     cleaned_salmon = CleanSalmonTable(salmon_output.single_salmon_df, file("${params.metadata}"))
     UpdateSalmonTable.scan(cleaned_salmon.clean_salmon)
     PublishSalmonTable(UpdateSalmonTable.out)
+    
 
 }
 //messages to display once the workflow has completed
