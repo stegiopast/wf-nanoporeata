@@ -1,0 +1,195 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
+    "title": "NanopoReaTA_hackathon",
+    "workflow_title": "NanopoReaTA_hackatho,",
+    "description": "Nextflow workflow for running NanopoReaTA.",
+    "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo.tar.gz",
+    "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo/aws.nextflow.config",
+    "url": "https://github.com/Nanopore-Hackathon/NanopoReaTA_hackathon",
+    "type": "object",
+    "definitions": {
+        "input": {
+            "title": "Input Options",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Parameters for finding and handling input data for NanopoReaTA.",
+            "properties": {
+                "seq_data_folder": {
+                    "type": "string",
+                    "format": "path",
+                    "title": "Sequencing Data Folder",
+                    "description": "MinKnow experiment folder.",
+                    "help_text": "This accepts one of three cases: (i) the path to a single FASTQ file; (ii) the path to a top-level directory containing FASTQ files; (iii) the path to a directory containing one level of sub-directories which in turn contain FASTQ files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`."
+                },
+                "output_dir": {
+                    "type": "string",
+                    "format": "path",
+                    "description": "File path where results are written",
+                    "help_text": "This accepts one of three cases: (i) the path to a single BAM file; (ii) the path to a top-level directory containing BAM files; (iii) the path to a directory containing one level of sub-directories which in turn contain BAM files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`."
+                },
+                "metadata": {
+                    "type": "string",
+                    "title": "Metadata Sheet",
+                    "format": "file-path",
+                    "description": "Path to CSV file with 'Sample, Condition, Replicate' as columns",
+                    "help_text": "The sample sheet is a CSV file with, minimally, columns named `barcode` and `alias`. Extra columns are allowed."
+                },
+                "barcoded": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable to continuously watch the input directory for new input files.",
+                    "help_text": "This option enables the use of Nextflow\u2019s directory watching feature to constantly monitor input directories for new files."
+                }
+            },
+            "allOf": [
+                {
+                    "required": [
+                        "seq_data_folder",
+                        "metadata",
+                        "output_dir"
+                    ]
+                }]
+        },
+        "references": {
+            "title": "Reference Options",
+            "type": "object",
+            "fa_icon": "fas fa-vials",
+            "description": "Parameters that relate to the reference genome and the species.",
+            "properties": {
+                "genome_gtf": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "GTF file containing the annotation for the species."
+                },
+                "bed_file": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "BED file containing the annotation for the species (RseqQC Standard)."
+                },
+                "genome_fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "FASTA file describing the whole genome."
+                },
+                "transcriptome_fasta": {
+                    "type": "string",
+                    "format": "file-path",
+                    "description": "FASTA file describing the transcriptome."
+                }
+            },
+            "allOf": [
+                {
+                    "required": [
+                        "genome_gtf",
+                        "bed_file",
+                        "genome_fasta",
+                        "transcriptome_fasta"
+                    ]
+                }]
+        },
+        "advanced_options": {
+            "title": "Advanced Options",
+            "type": "object",
+            "fa_icon": "far fa-question-circle",
+            "description": "Advanced options for configuring processes inside the workflow.",
+            "help_text": "These advanced options do not need to be changed for typical use, but allow fine tuning of workflows for users who want more control over the workflow.",
+            "properties": {
+                "batchsize": {
+                    "type": "integer",
+                    "description": "How many files would you like to process per iteration?",
+                    "default": 30
+                },
+                "drs": {
+                    "title": "Direct RNA",
+                    "type": "boolean",
+                    "description": "“Is sample direct RNA ? ",
+                    "default": true
+                },
+                "threads": {
+                    "type": "integer",
+                    "description": "How many thread you want to use?",
+                    "default": 8
+                },
+                "script_dir": {
+                    "type": "string",
+                    "format": "path",
+                    "description": "Path to the directory nextflow needs to get files from, here it could be the repository"
+                }
+            }
+        },
+        "misc": {
+            "title": "Miscellaneous Options",
+            "type": "object",
+            "description": "Everything else.",
+            "default": "",
+            "properties": {
+                "disable_ping": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable to prevent sending a workflow ping."
+                },
+                "help": {
+                    "type": "boolean",
+                    "description": "Display help text.",
+                    "fa_icon": "fas fa-question-circle",
+                    "default": false,
+                    "hidden": true
+                },
+                "version": {
+                    "type": "boolean",
+                    "description": "Display version and exit.",
+                    "fa_icon": "fas fa-question-circle",
+                    "default": false,
+                    "hidden": true
+                }
+            }
+        }
+    },
+    "allOf": [
+        {
+            "$ref": "#/definitions/input"
+        },
+        {
+            "$ref": "#/definitions/references"
+        },
+        {
+            "$ref": "#/definitions/advanced_options"
+        },
+        {
+            "$ref": "#/definitions/misc"
+        }
+    ],
+    "properties": {
+        "aws_image_prefix": {
+            "type": "string",
+            "hidden": true
+        },
+        "aws_queue": {
+            "type": "string",
+            "hidden": true
+        },
+        "monochrome_logs": {
+            "type": "boolean"
+        },
+        "validate_params": {
+            "type": "boolean",
+            "default": true
+        },
+        "show_hidden_params": {
+            "type": "boolean"
+        }
+    },
+    "resources": {
+        "recommended": {
+            "cpus": 2,
+            "memory": "2GB"
+        },
+        "minimum": {
+            "cpus": 2,
+            "memory": "2GB"
+        },
+        "run_time": "5 minutes per sample",
+        "arm_support": true 
+    }
+}
