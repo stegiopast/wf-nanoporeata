@@ -15,7 +15,7 @@ nextflow.preview.recursion=true
 // genome_index = "runMT-human_ont.mmi"
 // transcriptome_fasta = null
 
-include { ConvertGtfToDf; start_watch_path } from "./lib/initialize.nf"
+include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path } from "./lib/initialize.nf"
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
 include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
@@ -23,6 +23,7 @@ include { RunDevelopmentEstimation } from "./lib/qc.nf"
 
 
 workflow {
+    feature_percentiles = CreateFeaturePercentiles(file("${params.bed_file}"))
     index_output = MinimapIndex(file("${params.genome_fasta}"),file("${params.transcriptome_fasta}"))
     conversion_output = ConvertGtfToDf(file("${params.genome_gtf}"))
     conversion_output_channel = conversion_output.done
@@ -50,7 +51,7 @@ workflow {
     PublishSalmonTable(UpdateSalmonTable.out)
     UpdateIterator2(PublishSalmonTable.out)
     DESeq2Transcriptome(UpdateIterator2.out.run_statistics,PublishSalmonTable.out.merged_all,file("${params.metadata}"))
-    DTUanalysis(DESeq2Transcriptome.out.dea_transcriptome_done,PublishSalmonTable.out.merged_all,file("${params.metadata}"), file("${params.genome_gtf}"))
+    DTUanalysis(DESeq2Transcriptome.out.dea_transcriptome_done,PublishSalmonTable.out.merged_all,file("${params.metadata}"), file("${params.output_dir}/converted_gtf.csv"))
     
 
 }
@@ -59,5 +60,6 @@ workflow {
 workflow.onComplete {
     println "Pipeline completed at: $workflow.complete"
 }
+
 
 //Rscript script.r "${new_input}" "${state}"

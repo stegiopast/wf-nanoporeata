@@ -18,6 +18,7 @@ import java.io.File
 process FeatureCount {
     label "nanoporeata"
     maxForks 1
+    cpus 4
     input:
         tuple val(ID), path(bam)
         path genome_gtf
@@ -27,7 +28,7 @@ process FeatureCount {
     script:
     """
     samtools index ${bam}
-	featureCounts -a "${genome_gtf}" -F 'GTF' -L -T ${params.threads} -o ${ID}.${task.index}.csv ${bam} -T ${params.threads}
+	featureCounts -a "${genome_gtf}" -F 'GTF' -L -T ${params.threads} -o ${ID}.${task.index}.csv ${bam} -T ${task.cpus}
     """
 }
 
@@ -100,6 +101,7 @@ process PublishFeatureCountTable {
 process Salmon{
     label "nanoporeata"
     maxForks 1
+    cpus 4
     input:
         tuple val(ID), path(bam)
         path genome_gtf
@@ -110,7 +112,7 @@ process Salmon{
     script:
     """
     samtools index ${bam}
-    salmon quant -t ${params.transcriptome_fasta} -l A -a ${bam} -o salmon.${ID}.${task.index} -p ${params.threads}
+    salmon quant -t ${params.transcriptome_fasta} -l A -a ${bam} -o salmon.${ID}.${task.index} -p ${task.cpus} --minAssignedFrags 0
     """
 }
 
@@ -185,7 +187,7 @@ process DESeq2Genome {
     label "R"
     publishDir (path: "${params.output_dir}", mode: 'copy')
     maxForks 1
-    cpus 3
+    cpus 4
     maxRetries 10
     input:
         val run_statistics
@@ -208,7 +210,7 @@ process DESeq2Transcriptome{
     label "R"
     publishDir (path: "${params.output_dir}", mode: 'copy')
     maxForks 1
-    cpus 3
+    cpus 4
     maxRetries 10
     input:
         val run_statistics
@@ -231,7 +233,6 @@ process DTUanalysis{
     label "R"
     publishDir (path: "${params.output_dir}", mode: 'copy')
     maxForks 1
-    cpus 3
     maxRetries 10 
     input:
         val transcriptome_done

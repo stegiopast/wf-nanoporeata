@@ -38,14 +38,14 @@ process MinimapIndex {
 
 process MinimapGenome {
     label "nanoporeata"
-       publishDir(
+    publishDir(
         path: "${params.output_dir}/${ID}/bam_files/",
         mode: 'copy',
     )
     maxForks 1
-    memory "16GB"
+    memory "14GB"
     maxRetries 10
-    cpus 1
+    cpus 4
     input:
     tuple val(ID), path(fastq)
     path fasta
@@ -60,23 +60,23 @@ process MinimapGenome {
     """
     if [ ${params.drs} -eq 1 ]
     then
-        minimap2 --MD -ax splice -uf -k14 ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam
+        minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam
     else
-        minimap2 --MD -ax splice ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam 
+        minimap2 --MD -ax splice -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam 
     fi
     """
 }
 
 process MinimapTranscriptome {
     label "nanoporeata"
-       publishDir(
+    publishDir(
         path: "${params.output_dir}/${ID}/bam_files_transcripts/",
         mode: 'copy',
     )
     maxForks 1
-    memory "16GB"
+    memory "14GB"
     maxRetries 10
-    cpus 1
+    cpus 4
     input:
     tuple val(ID), path(fastq)
     path fasta
@@ -91,9 +91,9 @@ process MinimapTranscriptome {
     """
     if [ ${params.drs} -eq 1 ]
     then
-        minimap2 --MD -ax map-ont -uf -k14 ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
     else
-        minimap2 --MD -ax map-ont ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        minimap2 --MD -ax map-ont -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
     fi
     """
 }

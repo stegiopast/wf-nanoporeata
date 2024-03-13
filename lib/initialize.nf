@@ -4,10 +4,11 @@ import java.io.File
 
 process ConvertGtfToDf{ 
     publishDir "${params.output_dir}/"
-    maxForks 1
+    maxForks 3
     memory "8GB"
+    maxRetries 10
     input:
-    path(genome_gtf, stageAs: "gtf/*")
+    path(genome_gtf)
 
     output:
     path("./converted_gtf.csv")
@@ -31,7 +32,6 @@ def start_watch_path(){
         | map { tuple(it.parent.name, it ) }
         
         ch_watched_final = ch_existing_input | concat(ch_watched)  
-        //samples.view()
     }
     else{
         def ch_existing_input = Channel.fromPath("${params.seq_data_folder}*/*/fastq_pass/*.fast*", type: "file") 
@@ -44,17 +44,23 @@ def start_watch_path(){
         | map { tuple(it.parent.parent.parent.name, it ) }
 
         ch_watched_final = ch_existing_input | concat(ch_watched)     
-        //samples.view()
-        
     }
     return ch_watched_final
 }
 
-// process CreateFeaturePercentiles{
-//     publishDir "${params.output_dir}/"
-//     maxForks 1
-//     memory "8GB"
-// }
+process CreateFeaturePercentiles{
+    publishDir "${params.output_dir}/"
+    maxForks 3
+    memory "8GB"
+    input:
+        path genome_bed
+    output:
+        path "./g_percentiles.json", emit: feature_percentile_file
+    script:
+    """
+    python ${projectDir}/bin/create_feature_percentiles.py --bed ${genome_bed} --output_dir ./
+    """
+}
 
 
 // process find_data_folders(){

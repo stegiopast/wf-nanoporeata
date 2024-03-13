@@ -15,7 +15,7 @@ output_RDATA = args[4] # "transcript_usage.RData"
 process_input_files <- function(counts_path, metadata_path){
   counts_df = data.table::fread(counts_path, data.table = T)
   geneNames = counts_df$Name
-  counts_df = counts_df %>% dplyr::select(-1:-4)
+  counts_df = counts_df %>% dplyr::select(-1:-3)
   counts_df = as.data.frame(counts_df)
   counts_df_int = sapply(counts_df, as.numeric)
   row.names(counts_df_int) = geneNames
@@ -52,26 +52,27 @@ create_DRIMSeq_object <- function(counts_df, samps, gtf_file, output_RDATA){
   counts <- data.frame(gene_id=gtf_file$gene_id,
                        feature_id=gtf_file$transcript_id,
                        counts_df)  
+
   samps["sample_id"] = samps$Samples
+  print(samps["sample_id"])
+  print(colnames(counts))
   d <- dmDSdata(counts=counts, samples=samps)
   n <- length(samps$Samples)
   n.small <- min(table(samps$Condition))
-  out2 <- tryCatch(
-    {d <- dmFilter(d,
-                   min_samps_feature_expr=as.integer(n.small), min_feature_expr=5,
-                   min_samps_gene_expr=(n.small), min_gene_expr=20)
-    x = F
-    },
-    error = function(e){
-      x = T
-    },
-    finally = {
-    })
-  if (out2){
-    flog.info("########## DrimSeq Filtering failed ###########")
-    flog.info("Either only one splicing variant for every gene in dataset or it must be sequenced deeper")
-    return(NULL)
-  }
+  # out2 <- tryCatch(
+  d <- dmFilter(d,min_samps_feature_expr=as.integer(n.small), min_feature_expr=5, min_samps_gene_expr=(n.small), min_gene_expr=20)
+  #   x = F
+  #   },
+  #   error = function(e){
+  #     x = T
+  #   },
+  #   finally = {
+  #   })
+  # if (out2){
+  #   flog.info("########## DrimSeq Filtering failed ###########")
+  #   flog.info("Either only one splicing variant for every gene in dataset or it must be sequenced deeper")
+  #   return(NULL)
+  # }
   
   return(d)
 }
@@ -97,18 +98,18 @@ createDEXSeq_object = function(d_list){
 }
 
 
-out <- tryCatch(
-          { meta_counts = process_input_files(counts_path, metadata_path)
-            d_object = create_DRIMSeq_object(counts_df = meta_counts[[2]], samps = meta_counts[[1]], gtf_file, output_RDATA)
-            dxd_object = createDEXSeq_object(d_list = d_object)
-            save(d_object, dxd_object, file = output_RDATA)
-            x <- FALSE
-          },
-          error = function(e){
-            x <- TRUE
-          },
-          finally = {
-          })
+out <- tryCatch({ 
+  meta_counts = process_input_files(counts_path, metadata_path)
+  d_object = create_DRIMSeq_object(counts_df = meta_counts[[2]], samps = meta_counts[[1]], gtf_file, output_RDATA)
+  dxd_object = createDEXSeq_object(d_list = d_object)
+  save(d_object, dxd_object, file = output_RDATA)
+  x <- FALSE
+  },
+  error = function(e){
+  x <- TRUE
+  },
+  finally = {
+})
 
 if (out){
   d_object <- list()
