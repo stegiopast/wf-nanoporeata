@@ -17,16 +17,9 @@ nextflow.preview.recursion=true
 
 include { ConvertGtfToDf; start_watch_path } from "./lib/initialize.nf"
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
-include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; UpdateIterator } from "./lib/quantify.nf"
+include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
-
-class IntObj{
-    public int value = 0
-}
-
-iterator = new IntObj()
-iterator.value = 1
-
+include { RunDevelopmentEstimation } from "./lib/qc.nf"
 
 
 workflow {
@@ -45,7 +38,8 @@ workflow {
     UpdateFeatureCountTable.scan(cleaned_fc.clean_fc)
     PublishFeatureCountTable(UpdateFeatureCountTable.out)
     UpdateIterator(PublishFeatureCountTable.out)
-    //DESeq2Genome(PublishFeatureCountTable.out.merged_csv,file("${params.metadata}"))
+    RunDevelopmentEstimation(UpdateIterator.out.run_statistics, PublishFeatureCountTable.out.merged_all, file("${params.output_dir}/inner_variability_plot.csv"),file("${params.output_dir}/inner_variability_per_sample.csv"),file("${params.output_dir}/exp_genes_counted_per_sample.csv"))
+    DESeq2Genome(UpdateIterator.out.run_statistics,PublishFeatureCountTable.out.merged_all,file("${params.metadata}"))
 
 
     //Run transcript alignment, annotation and quantification
@@ -54,6 +48,9 @@ workflow {
     cleaned_salmon = CleanSalmonTable(salmon_output.single_salmon_df, file("${params.metadata}"))
     UpdateSalmonTable.scan(cleaned_salmon.clean_salmon)
     PublishSalmonTable(UpdateSalmonTable.out)
+    UpdateIterator2(PublishSalmonTable.out)
+    DESeq2Transcriptome(UpdateIterator2.out.run_statistics,PublishSalmonTable.out.merged_all,file("${params.metadata}"))
+    DTUanalysis(DESeq2Transcriptome.out.dea_transcriptome_done,PublishSalmonTable.out.merged_all,file("${params.metadata}"), file("${params.genome_gtf}"))
     
 
 }

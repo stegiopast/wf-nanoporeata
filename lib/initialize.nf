@@ -5,7 +5,7 @@ import java.io.File
 process ConvertGtfToDf{ 
     publishDir "${params.output_dir}/"
     maxForks 1
-    memory "25GB"
+    memory "8GB"
     input:
     path(genome_gtf, stageAs: "gtf/*")
 
@@ -49,6 +49,12 @@ def start_watch_path(){
     }
     return ch_watched_final
 }
+
+// process CreateFeaturePercentiles{
+//     publishDir "${params.output_dir}/"
+//     maxForks 1
+//     memory "8GB"
+// }
 
 
 // process find_data_folders(){

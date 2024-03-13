@@ -6,18 +6,17 @@ import os
 opt_parser = argparse.ArgumentParser()
 
 opt_parser.add_argument("-s", "--sample_file", dest="sample", help="Insert a sample file to add names to", metavar="FILE")
-opt_parser.add_argument("-m", "--metadata_file",dest="metadata", help="Insert a metadata file to extract metdata from", metavar="FILE")
 opt_parser.add_argument("-o", "--output_path",dest="output", help="Insert a template file to extract names from", metavar="FILE")
 
 options = opt_parser.parse_args()
 
 sample = options.sample
-metadata = options.metadata
 output_path = options.output
 
 #Read the count table of the current iteration
 sample_df = pd.read_csv(sample,header = 0, index_col = 0, sep = "\t")
-if not os.path.exists(output_path):
+print(os.path.getsize(output_path))
+if os.path.getsize(output_path) < 3:
     output_df = pd.DataFrame()
 else:
     output_df = pd.read_csv(output_path,header=0, sep = "\t")

@@ -78,7 +78,7 @@ process PublishFeatureCountTable {
     input:
         path merged_csv
     output:
-        path("merged_all.csv")
+        path("merged_all.csv"), emit: merged_all
     script:
     """
     cat $merged_csv > merged_all.csv
@@ -139,7 +139,7 @@ process UpdateSalmonTable{
     input: 
         path output
     output:
-        path "salmon_latest_${task.index}.csv"
+        path "salmon_latest_${task.index}.csv", emit: merged_all
     script:
        def new_table = output instanceof BlankSeparatedList ? output.first() : output
        def old_table = output instanceof BlankSeparatedList ? output.last() : "NOSTATE"
@@ -162,7 +162,7 @@ process PublishSalmonTable{
     input:
         path merged_csv
     output:
-        path("salmon_merged_absolute.csv")
+        path("salmon_merged_absolute.csv"), emit: merged_all
     script:
     """
     cat $merged_csv > salmon_merged_absolute.csv
@@ -186,14 +186,66 @@ process DESeq2Genome {
     publishDir (path: "${params.output_dir}", mode: 'copy')
     maxForks 1
     cpus 3
+    maxRetries 10
     input:
+        val run_statistics
         path count_table
         path metadata
+
+    when:
+        run_statistics == 1 
     output:
-        path("DDS_genes.R")
+        path '*gene.RData'
+        val 1, emit: dea_genome_done
     script:
     """
-    Rscript ${projectDir}/bin/nf_dea_function.R $metadata "gene" $count_table $task.cpus DDS_genes.R 
+    Rscript ${projectDir}/bin/dea_nextflow.R $metadata "gene" $count_table $task.cpus gene.RData 
+    """
+}
+
+
+process DESeq2Transcriptome{
+    label "R"
+    publishDir (path: "${params.output_dir}", mode: 'copy')
+    maxForks 1
+    cpus 3
+    maxRetries 10
+    input:
+        val run_statistics
+        path count_table
+        path metadata
+    when:
+        run_statistics == 1
+    output:
+        path('*transcript.RData')
+        val 1, emit: dea_transcriptome_done
+
+    script:
+    """
+    Rscript ${projectDir}/bin/dea_nextflow.R $metadata "transcript" $count_table $task.cpus transcript.RData 
+    """
+}
+
+
+process DTUanalysis{
+    label "R"
+    publishDir (path: "${params.output_dir}", mode: 'copy')
+    maxForks 1
+    cpus 3
+    maxRetries 10 
+    input:
+        val transcriptome_done
+        path count_table
+        path metadata
+        path gtf_file
+
+    output:
+        path('*transcript_usage.RData')
+        
+
+    script:
+    """
+    Rscript ${projectDir}/bin/dtu_nextflow.R $metadata $count_table $gtf_file transcript_usage.RData
     """
 }
 
@@ -210,21 +262,47 @@ process DESeq2Genome {
 
 
 process UpdateIterator{
+    publishDir "${params.output_dir}"
     input:
     path feature_count_merged
 
     output:
-    path(feature_count_merged), emit: merged_csv
     val(run_statistics), emit: run_statistics
+    path("*")
 
     script:
-    if (iterator.value % ${params.batchsize} == 0){
+    if ((task.index % params.batchsize) == 0){
         run_statistics = 1
     }
     else{
         run_statistics = 0
     }
-    iterator.value = iterator.value + 1
-    println iterator.value
+    """
+    if [ ${task.index} -eq 1 ]
+    then
+        echo "" > inner_variability_plot.csv
+        echo "" > inner_variability_per_sample.csv
+        echo "" > exp_genes_counted_per_sample.csv
+    else
+        echo "Initialization has been performed successfully" > initialization_done.log
+    fi
+    """
+}
 
+
+process UpdateIterator2{
+    publishDir "${params.output_dir}"
+    input:
+    path salmon_count_merged
+
+    output:
+    val(run_statistics), emit: run_statistics
+
+    exec:
+    if ((task.index % params.batchsize) == 0){
+        run_statistics = 1
+    }
+    else{
+        run_statistics = 0
+    }
 }

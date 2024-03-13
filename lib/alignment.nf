@@ -9,6 +9,7 @@ process MinimapIndex {
     label "nanoporeata"
     publishDir "${params.output_dir}"
     maxForks 1
+    maxRetries 10 
     memory "25GB"
     input:
     path genome_fasta
@@ -42,7 +43,7 @@ process MinimapGenome {
         mode: 'copy',
     )
     maxForks 1
-    memory "12 GB"
+    memory "16GB"
     maxRetries 10
     cpus 1
     input:
@@ -73,7 +74,7 @@ process MinimapTranscriptome {
         mode: 'copy',
     )
     maxForks 1
-    memory "12 GB"
+    memory "16GB"
     maxRetries 10
     cpus 1
     input:

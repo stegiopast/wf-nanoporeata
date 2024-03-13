@@ -87,5 +87,22 @@ run_preprocessing_dea <- function(metadata, counts, output_file){
   
 }
 
+out <- tryCatch(
+          { run_preprocessing_dea(metadata, counts, output_file)
+            x <- FALSE
+          },
+          error = function(e){
+            x <- TRUE
+          },
+          finally = {
+          })
 
-run_preprocessing_dea(metadata, counts, output_file)
+if (out){
+  dds <- list()
+  if (args[2] == "gene") {
+    save(dds, file = "failed_gene.RData")
+  }
+  else{
+    save(dds, file="failed_transcript.RData")
+  }
+}

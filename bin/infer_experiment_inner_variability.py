@@ -8,7 +8,6 @@ import os
 opt_parser = argparse.ArgumentParser()
 
 opt_parser.add_argument("-s", "--sample_file", dest="sample", help="Insert a sample file to add names to", metavar="FILE")
-opt_parser.add_argument("-m", "--metadata_file",dest="metadata", help="Insert a metadata file to extract metadata from", metavar="FILE")
 opt_parser.add_argument("-d", "--percentages_output_path",dest="percentages", help="Insert an output path for percenatges", metavar="FILE")
 opt_parser.add_argument("-o", "--output_path",dest="output", help="Insert a template file to extract names from", metavar="FILE")
 
@@ -16,7 +15,6 @@ opt_parser.add_argument("-o", "--output_path",dest="output", help="Insert a temp
 options = opt_parser.parse_args()
 
 sample = options.sample
-metadata = options.metadata
 output_path = options.output
 p_output_path = options.percentages
 
@@ -24,15 +22,16 @@ p_output_path = options.percentages
 sample_df = pd.read_csv(sample,header = 0, index_col = 0, sep = "\t")
 
 #Check for necessary paths
-if not os.path.exists(output_path):
+if os.path.getsize(output_path) < 3:
     output_df = pd.DataFrame()
 else:
     output_df = pd.read_csv(output_path,header=0, sep = "\t")
 
-if not os.path.exists(p_output_path):
+if os.path.getsize(p_output_path) < 3:
     p_output_df = pd.DataFrame()
 else:
     p_output_df = pd.read_csv(p_output_path, header=0, sep = "\t")
+
 
 #Read the relative read counts for every sample in the FeatureCount table
 samplenames = []
@@ -45,7 +44,10 @@ for i in range(len(sample_df.iloc[0,:])):
         sum = column.sum()
         percentages = []
         for i in column:
-            percentages.append(float(i/sum))
+            if sum == 0:
+                percentages.append(0)
+            else:
+                percentages.append(float(i)/sum)
         columns_of_percentages.append(percentages)
 
 #Append relative read counts to a new dataframe
@@ -76,7 +78,10 @@ if len(p_output_df) > 1:
         mean_list.append(tmp_mean)
     print(mean_list)
 
-new_mean_df = pd.DataFrame([mean_list], columns = samplenames)
+try:
+    new_mean_df = pd.DataFrame([mean_list], columns = samplenames)
+except:
+    new_mean_df = pd.DataFrame([[0 for i in samplenames]], columns = samplenames)
 
 #Write output
 output_df = pd.concat([output_df,new_mean_df])
