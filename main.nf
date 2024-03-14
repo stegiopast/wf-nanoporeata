@@ -19,7 +19,7 @@ include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path } from "./l
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
 include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
-include { RunDevelopmentEstimation } from "./lib/qc.nf"
+include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; UpdateReadLengthDistribution } from "./lib/qc.nf"
 
 
 workflow {
@@ -41,6 +41,16 @@ workflow {
     UpdateIterator(PublishFeatureCountTable.out)
     RunDevelopmentEstimation(UpdateIterator.out.run_statistics, PublishFeatureCountTable.out.merged_all, file("${params.output_dir}/inner_variability_plot.csv"),file("${params.output_dir}/inner_variability_per_sample.csv"),file("${params.output_dir}/exp_genes_counted_per_sample.csv"))
     DESeq2Genome(UpdateIterator.out.run_statistics,PublishFeatureCountTable.out.merged_all,file("${params.metadata}"))
+
+    //Run read mapping quantification
+    counted_reads = CountMappedReads(minimap_genome_output.aligned_bams, minimap_genome_output.aligned_bam_bais)
+    MergeMappedReadsTable(counted_reads.read_counts,file("${params.metadata}"),file("${params.output_dir}/mapping_stats.txt"))
+
+    //Read size distribution
+    UpdateReadLengthDistribution(samples)
+    
+    //Process run time
+
 
 
     //Run transcript alignment, annotation and quantification

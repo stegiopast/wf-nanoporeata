@@ -55,14 +55,17 @@ process MinimapGenome {
 
     output: 
     tuple val(ID), path("genes_${ID}.out${task.index}.bam"), emit: aligned_bams 
+    path("genes_${ID}.out${task.index}.bam.bai"), emit:aligned_bam_bais
   
     script:
     """
     if [ ${params.drs} -eq 1 ]
     then
         minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam
+        samtools index genes_${ID}.out${task.index}.bam
     else
         minimap2 --MD -ax splice -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam 
+        samtools index genes_${ID}.out${task.index}.bam
     fi
     """
 }
@@ -86,14 +89,17 @@ process MinimapTranscriptome {
 
     output: 
     tuple val(ID), path("transcripts_${ID}.out${task.index}.bam"), emit: aligned_bams 
+    path("transcripts_${ID}.out${task.index}.bam.bai")
 
     script:
     """
     if [ ${params.drs} -eq 1 ]
     then
         minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        samtools index transcripts_${ID}.out${task.index}.bam
     else
         minimap2 --MD -ax map-ont -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        samtools index transcripts_${ID}.out${task.index}.bam
     fi
     """
 }

@@ -1,3 +1,8 @@
+import groovy.json.JsonBuilder
+import nextflow.util.BlankSeparatedList
+import java.io.File
+
+
 process RunDevelopmentEstimation{
     label "nanoporeata"
     publishDir "${params.output_dir}"
@@ -31,56 +36,62 @@ process RunDevelopmentEstimation{
 }
 
 
+process CountMappedReads{
+    publishDir "${params.output_dir}/mapped_reads/"
+    input:
+    tuple val(ID), path(bam)
+    path(bai)
+
+    output:
+    tuple val(ID), path("mapped_read_counts_${ID}_${task.index}.csv"), emit: read_counts
+
+    script:
+    """
+    bash ${projectDir}/bin/get_number_of_mapped_reads.sh $bam $ID mapped_read_counts_${ID}_${task.index}.csv 
+    """
+}
+
+process MergeMappedReadsTable{
+    publishDir "${params.output_dir}"
+    input:
+    tuple val(ID), path(count_csv)
+    path(metadata)
+    path(construct_dir), stageAs: "construct_dir.csv"
+    output:
+    path("mapping_stats.txt")
+
+    script:
+    if (task.index == 1)
+    """
+    python ${projectDir}/bin/initialize_read_counts.py -i $count_csv -m $metadata -o mapping_stats.txt
+    """
+    else
+    """
+    python ${projectDir}/bin/continue_read_counts.py -i $count_csv -m $metadata -c construct_dir.csv -o mapping_stats.txt
+    """
+}
+
+process UpdateReadLengthDistribution{
+    publishDir "${params.output_dir}/ReadLengthFolder/"
+    input:
+    tuple val(ID), path(fastq_file)
+
+    output:
+    path("${ID}_read_lengths_pass.txt")
+
+    script:
+    def new_fastq = fastq_file instanceof BlankSeparatedList ? fastq_file.first() : fastq_file
+    def old_fastq = fastq_file instanceof BlankSeparatedList ? fastq_file.last() : "NOSTATE"
+    """
+    if [ $old_fastq == "NOSTATE" ]
+    then 
+        echo Length > ${ID}_read_lengths_pass.txt
+        bash ${projectDir}/bin/determine_read_length.sh $new_fastq ${ID}_read_lengths_pass.txt
+    else
+        cat $old_fastq > ${ID}_read_lengths_pass.txt
+        bash ${projectDir}/bin/determine_read_length.sh $new_fastq ${ID}_read_lengths_pass.txt
+    fi
+    """
+}
 
 
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// //                                                                                                                                                         // 
-// //                                                                                                                                                         //
-// //                                                                                                                                                         //
-// //                                                                          Size checkup                                                                   //
-// //                                                                                                                                                         //
-// //                                                                                                                                                         //
-// //                                                                                                                                                         //
-// //                                                                                                                                                         //
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// process readlength_check{
-//     input:
-//     val string
-//     val string_array
-
-//     script:
-//     println "Running readlength analysis"
-//     """
-//     for i in ${string}
-//     do
-//         if [ ${params.barcoded} -eq 1 ]
-//         then
-//             basis=\$(basename \$(dirname \${i}))
-//         else
-//             basis=\$(basename \$(dirname \$(dirname \$(dirname \${i}))))
-//             echo \$basis >> ${params.output_dir}error_logs/readlength_counting_error.log
-//         fi 
-//         bash ${params.script_dir}get_read_length_from_fastq.sh \$i \$basis ${params.output_dir}ReadLengthFolder || echo ${params.output_dir}error_logs/readlength_counting_error.log
-//     done 
-//     """
-// }
-
-// process infer_experiment{
-//     memory "4 GB"
-//     input:
-//     val fc_string
-
-//     script:
-//     if (fc_string != "")
-//     """
-//     workflow-glue infer_experiment_absolute_gene_amount -s ${params.output_dir}merged_all.csv -m "" -o ${params.output_dir}exp_genes_counted_per_sample.csv || echo "${fc_string}" >> ${params.output_dir}error_logs/quantify_genes_detected.log
-//     workflow-glue infer_experiment_inner_variability -s ${params.output_dir}merged_all.csv -m "" -d ${params.output_dir}inner_variability_plot.csv  -o ${params.output_dir}inner_variability_per_sample.csv || echo "${fc_string}" >> ${params.output_dir}error_logs/quantify_inner_variablity_detected.log
-//     """
-//     else
-//     """
-//     echo empty
-//     """
-
-
-// }

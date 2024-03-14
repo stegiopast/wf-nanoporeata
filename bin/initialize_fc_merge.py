@@ -15,12 +15,8 @@ output_file = options.output_file
 
 metadata_df = pd.read_csv(metadata,header = 0,sep="\t")
 samplenames = list(metadata_df["Samples"])
-print(options.input_file)
-print(["Geneid"] + samplenames)
 df_temp = pd.read_csv(input_file, sep = "\t", header = 1)
-print(df_temp.shape)
 df_construct = pd.DataFrame([[0 for i in range(len(samplenames))] for k in range(df_temp.shape[0])],columns=samplenames)
-print(df_construct.shape)
 df = pd.concat([df_temp.iloc[:,0],df_construct], axis = 1)
 df.columns = ["Geneid"] + samplenames
 print(df.head())
