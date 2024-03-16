@@ -1,6 +1,7 @@
 import groovy.json.JsonBuilder
 import nextflow.util.BlankSeparatedList
 import java.io.File
+import java.time.LocalDateTime
 
 
 process RunDevelopmentEstimation{
@@ -71,27 +72,96 @@ process MergeMappedReadsTable{
     """
 }
 
-process UpdateReadLengthDistribution{
-    publishDir "${params.output_dir}/ReadLengthFolder/"
+process DefineReadLengthDistribution{
+    maxForks 1
     input:
     tuple val(ID), path(fastq_file)
-
+    path(metadata)
+    
     output:
-    path("${ID}_read_lengths_pass.txt")
+    path("${ID}_read_lengths_${task.index}.csv")
 
     script:
-    def new_fastq = fastq_file instanceof BlankSeparatedList ? fastq_file.first() : fastq_file
-    def old_fastq = fastq_file instanceof BlankSeparatedList ? fastq_file.last() : "NOSTATE"
     """
-    if [ $old_fastq == "NOSTATE" ]
+    if [[ "$fastq_file" == *".gz" ]]
     then 
-        echo Length > ${ID}_read_lengths_pass.txt
-        bash ${projectDir}/bin/determine_read_length.sh $new_fastq ${ID}_read_lengths_pass.txt
+        zcat "$fastq_file" | awk 'NR%4==2' | awk '{ print length }' > ${ID}_read_length_file${task.index}.txt
     else
-        cat $old_fastq > ${ID}_read_lengths_pass.txt
-        bash ${projectDir}/bin/determine_read_length.sh $new_fastq ${ID}_read_lengths_pass.txt
+        cat "$fastq_file" | awk 'NR%4==2' | awk '{ print length }' > ${ID}_read_length_file${task.index}.txt
+    fi
+    cat ${ID}_read_length_file${task.index}.txt
+    python ${projectDir}/bin/initialize_read_length.py -s ${ID}_read_length_file${task.index}.txt -n ${ID} -m ${metadata} -o ${ID}_read_lengths_${task.index}.csv
+    """
+}
+
+process UpdateReadLengthDistribution{
+    input:
+    path(output)
+
+    output:
+    path("final_read_lengths_${task.index}.csv")
+
+    script:
+    def new_table = output instanceof BlankSeparatedList ? output.first() : output
+    def old_table = output instanceof BlankSeparatedList ? output.last() : "NOSTATE"
+    """
+    if [ $old_table == "NOSTATE" ]
+    then 
+        cat $new_table > final_read_lengths_${task.index}.csv
+    else
+        python ${projectDir}/bin/continue_read_length.py -n $new_table -s $old_table
+        mv merged_all_readlengths_temp.csv final_read_lengths_${task.index}.csv
     fi
     """
 }
+
+process PublishReadLengthDistribution{
+    publishDir("${params.output_dir}/ReadLengthFolder")
+    input:
+    path(final_read_lengths)
+
+    output:
+    path("*_read_length_pass.txt")
+
+    script:
+    """
+    python ${projectDir}/bin/publish_read_length.py -i $final_read_lengths
+    """
+
+}
+
+
+
+// process ProcessingTimeRegistration{
+//     publishDir "${params.output_dir}"
+//     input:
+//     path(time_table), stageAs: "previous_table.csv"
+//     val(genome_process_start)
+//     val(genome_process_end)
+//     val(transcriptome_process_start)
+//     val(transcriptome_process_end)
+
+//     output:
+//     path("processing_time_table.csv")
+
+//     script:
+//     long elapsed_time_genome_pipeline = genome_process_start.until(genome_process_end,ChronoUnit.SECONDS)
+//     long elapsed_time_transcriptome_pipeline = transcriptome_process_start.until(transcriptome_process_end,ChronoUnit.SECONDS)
+//     if (task.index == 1)
+//     """
+//     echo Tool,Iteration,Time > processing_time_table.csv
+//     echo genome_pipeline,$task.index,$elapsed_time_genome_pipeline >> processing_time_table.csv
+//     echo transcriptome_pipeline,$task.index,$elapsed_time_transcriptome_pipeline >> processing_time_table.csv
+//     """
+//     else
+//     """
+//     echo genome_pipeline,$task.index,$elapsed_time_genome_pipeline >> previous_table.csv
+//     echo transcriptome_pipeline,$task.index,$elapsed_time_transcriptome_pipeline >> previous_table.csv
+//     cp previous_table > processing_time_table.csv
+//     """
+// }
+
+
+
 
 

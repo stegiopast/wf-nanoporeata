@@ -2,6 +2,7 @@
 
 import groovy.json.JsonBuilder
 import nextflow.util.BlankSeparatedList
+import java.time.LocalDateTime
 nextflow.enable.dsl = 2
 nextflow.preview.recursion=true 
 
@@ -19,7 +20,7 @@ include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path } from "./l
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
 include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
-include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; UpdateReadLengthDistribution } from "./lib/qc.nf"
+include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; DefineReadLengthDistribution; UpdateReadLengthDistribution; PublishReadLengthDistribution} from "./lib/qc.nf"
 
 
 workflow {
@@ -47,12 +48,11 @@ workflow {
     MergeMappedReadsTable(counted_reads.read_counts,file("${params.metadata}"),file("${params.output_dir}/mapping_stats.txt"))
 
     //Read size distribution
-    UpdateReadLengthDistribution(samples)
+    DefineReadLengthDistribution(samples,file("${params.metadata}"))
+    UpdateReadLengthDistribution.scan(DefineReadLengthDistribution.out)
+    PublishReadLengthDistribution(UpdateReadLengthDistribution.out)
+
     
-    //Process run time
-
-
-
     //Run transcript alignment, annotation and quantification
     minimap_transcript_output = MinimapTranscriptome(samples, file("${params.output_dir}/transcriptome_index.mmi"),conversion_output_channel,index_output_channel)
     salmon_output = Salmon(minimap_transcript_output.aligned_bams, file("${params.genome_gtf}"), file("${params.transcriptome_fasta}"))
@@ -63,6 +63,8 @@ workflow {
     DESeq2Transcriptome(UpdateIterator2.out.run_statistics,PublishSalmonTable.out.merged_all,file("${params.metadata}"))
     DTUanalysis(DESeq2Transcriptome.out.dea_transcriptome_done,PublishSalmonTable.out.merged_all,file("${params.metadata}"), file("${params.output_dir}/converted_gtf.csv"))
     
+    //Process run time
+    // ProcessingTimeRegistration(file("${params.output_dir}/processing_time_table.csv"),minimap_genome_output.timestamp,UpdateIterator.out.timestamp,minimap_transcript_output.timestamp,UpdateIterator2.out.timestamp)
 
 }
 //messages to display once the workflow has completed

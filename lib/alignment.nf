@@ -1,6 +1,7 @@
 import groovy.json.JsonBuilder
 import nextflow.util.BlankSeparatedList
 import java.io.File
+import java.time.LocalDateTime
 
 
 
@@ -56,7 +57,7 @@ process MinimapGenome {
     output: 
     tuple val(ID), path("genes_${ID}.out${task.index}.bam"), emit: aligned_bams 
     path("genes_${ID}.out${task.index}.bam.bai"), emit:aligned_bam_bais
-  
+
     script:
     """
     if [ ${params.drs} -eq 1 ]
