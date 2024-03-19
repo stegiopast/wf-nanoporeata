@@ -23,23 +23,23 @@ process ConvertGtfToDf{
 
 def start_watch_path(){
     if (params.barcoded == 1){
-        def ch_existing_input = Channel.fromPath("${params.seq_data_folder}*/*/fastq_pass/*/*.fast*", type: "file") 
+        def ch_existing_input = Channel.fromPath("${params.seq_data_folder}/*/*/fastq_pass/*/*.fast*", type: "file") 
         | map { tuple(it.parent.name, it ) }
         | randomSample( 100000000 , 100 )
 
-        def ch_watched = Channel.watchPath("${params.seq_data_folder}*/*/fastq_pass/*/*.fast*", 'create,modify')      
+        def ch_watched = Channel.watchPath("${params.seq_data_folder}/*/*/fastq_pass/*/*.fast*", 'create,modify')      
         | until { file->file.name == 'STOP.fastq.gz' }
         | map { tuple(it.parent.name, it ) }
         
         ch_watched_final = ch_existing_input | concat(ch_watched)  
     }
     else{
-        def ch_existing_input = Channel.fromPath("${params.seq_data_folder}*/*/fastq_pass/*.fast*", type: "file") 
+        def ch_existing_input = Channel.fromPath("${params.seq_data_folder}/*/*/fastq_pass/*.fast*", type: "file") 
         //| randomSample( fromPath_counts )
         | map { tuple(it.parent.parent.parent.name, it ) }
         | randomSample( 100000000 , 100 )
 
-        def ch_watched = Channel.watchPath("${params.seq_data_folder}*/*/fastq_pass/*.fast*", 'create,modify')      
+        def ch_watched = Channel.watchPath("${params.seq_data_folder}/*/*/fastq_pass/*.fast*", 'create,modify')      
         | until { file->file.name == 'STOP.fastq.gz' }
         | map { tuple(it.parent.parent.parent.name, it ) }
 
