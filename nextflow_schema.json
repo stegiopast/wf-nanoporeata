@@ -36,8 +36,8 @@
                     "help_text": "The sample sheet is a CSV file with, minimally, columns named `barcode` and `alias`. Extra columns are allowed."
                 },
                 "barcoded": {
-                    "type": "boolean",
-                    "default": true,
+                    "type": "integer",
+                    "default": 1,
                     "description": "Enable to continuously watch the input directory for new input files.",
                     "help_text": "This option enables the use of Nextflow\u2019s directory watching feature to constantly monitor input directories for new files."
                 }
@@ -102,9 +102,9 @@
                 },
                 "drs": {
                     "title": "Direct RNA",
-                    "type": "boolean",
+                    "type": "integer",
                     "description": "“Is sample direct RNA ? ",
-                    "default": true
+                    "default": 1
                 },
                 "threads": {
                     "type": "integer",
