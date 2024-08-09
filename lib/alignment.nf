@@ -14,7 +14,7 @@ process MinimapIndex {
     memory "25GB"
     input:
     path genome_fasta
-    path transcriptome_fasta
+    path transcriptome_fasta 
 
     output:
     path("*")
@@ -41,7 +41,7 @@ process MinimapGenome {
     label "nanoporeata"
     publishDir(
         path: "${params.output_dir}/${ID}/bam_files/",
-        mode: 'copy',
+        mode: 'copy'
     )
     maxForks 1
     memory "14GB"
@@ -68,6 +68,70 @@ process MinimapGenome {
         minimap2 --MD -ax splice -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam 
         samtools index genes_${ID}.out${task.index}.bam
     fi
+    """
+}
+
+
+
+process MinimapGenomeMergeBam{
+    label "nanoporeata"
+    cpus 2
+    maxRetries 1
+    maxForks 1
+    memory "12GB"
+    publishDir(
+        path: "${params.output_dir}/bam_genome_merged/",
+        mode: 'move'
+    )
+    input:
+        tuple val(ID), path(bam)
+        //file("${params.output_dir}/bam_genome_merged/*.bam")
+        path bamFiles
+    output:
+        path("${ID}.bam")
+        path("${ID}.bam.bai")
+    script:
+    """
+    if [ -f ${ID}.bam ]
+    then
+        if [ -s ${ID}.bam ]
+        then
+            samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
+            samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
+            samtools view -h merged_sorted.bam > merged_sorted.sam
+            grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
+            grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
+            grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
+            samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            mv final.bam ${ID}.bam
+            samtools index ${ID}.bam
+        else
+            cp ${bam} final.bam
+            rm -f barcode*.bam unclassified.bam
+            mv final.bam ${ID}.bam
+            samtools index ${ID}.bam
+        fi
+        
+    else
+        cp ${bam} final.bam
+        samtools sort final.bam > final_sorted.bam
+        rm -f final.bam barcode*.bam unclassified.bam
+        mv final_sorted.bam ${ID}.bam
+        samtools index ${ID}.bam
+    fi
+    """
+}
+
+process FindMergedGenomeBams{
+    input:
+        tuple val(ID), path(bam)
+    output:
+        tuple val(ID), path(bam), emit: aligned_bams
+        path(files), emit: merged_bams
+    script:
+        files="${params.output_dir}/bam_genome_merged/${ID}.bam"
+    """
     """
 }
 
@@ -101,6 +165,69 @@ process MinimapTranscriptome {
     else
         minimap2 --MD -ax map-ont -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
         samtools index transcripts_${ID}.out${task.index}.bam
+    fi
+    """
+}
+
+process FindMergedTranscriptomeBams{
+    input:
+        tuple val(ID), path(bam)
+    output:
+        tuple val(ID), path(bam), emit: aligned_bams
+        path(files), emit: merged_bams
+    script:
+        files="${params.output_dir}/bam_transcriptome_merged/${ID}.bam"
+    """
+    """
+}
+
+
+process MinimapTranscriptomeMergeBam{
+    label "nanoporeata"
+    cpus 2
+    maxRetries 1
+    maxForks 1
+    memory "12GB"
+    publishDir(
+        path: "${params.output_dir}/bam_transcriptome_merged/",
+        mode: 'move'
+    )
+    input:
+        tuple val(ID), path(bam)
+        //file("${params.output_dir}/bam_genome_merged/*.bam")
+        path bamFiles
+    output:
+        path("${ID}.bam"), emit: bam_merged
+        path("${ID}.bam.bai"), emit: bai_merged
+    script:
+    """
+    if [ -f ${ID}.bam ]
+    then
+        if [ -s ${ID}.bam ]
+        then
+            samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
+            samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
+            samtools view -h merged_sorted.bam > merged_sorted.sam
+            grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
+            grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
+            grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
+            samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            mv final.bam ${ID}.bam
+            samtools index ${ID}.bam
+        else
+            cp ${bam} final.bam
+            samtools sort final.bam > final_sorted.bam
+            rm -f final.bam barcode*.bam unclassified.bam
+            mv final_sorted.bam ${ID}.bam
+            samtools index ${ID}.bam
+        fi
+    else
+        cp ${bam} final.bam
+        samtools sort final.bam > final_sorted.bam
+        rm -f final.bam barcode*.bam unclassified.bam
+        mv final_sorted.bam ${ID}.bam
+        samtools index ${ID}.bam
     fi
     """
 }

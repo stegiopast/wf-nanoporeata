@@ -31,11 +31,12 @@ if(input_gene_or_trans == "gene"){
 } else if (input_gene_or_trans == "transcript"){
   counts = fread(input_counttable, data.table = T)
   geneNames = counts$Name
-  counts = counts %>% dplyr::select(-1:-4)
+  counts = counts %>% dplyr::select(-1:-3)
   counts = as.data.frame(counts)
   counts_numeric = sapply(counts, as.numeric)
   row.names(counts_numeric) = geneNames
   nulls = sapply(0,function(counttable)rowSums(counts_numeric==counts))
+  num_nulls = length(which(nulls[,1] == 0))
   
   counts <- as.data.frame(counts_numeric)
 }

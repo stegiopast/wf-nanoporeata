@@ -182,12 +182,12 @@
     },
     "resources": {
         "recommended": {
-            "cpus": 2,
-            "memory": "2GB"
+            "cpus": 16,
+            "memory": "64GB"
         },
         "minimum": {
-            "cpus": 2,
-            "memory": "2GB"
+            "cpus": 16,
+            "memory": "64GB"
         },
         "run_time": "5 minutes per sample",
         "arm_support": true 

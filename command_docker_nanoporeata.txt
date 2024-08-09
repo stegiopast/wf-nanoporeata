@@ -1,0 +1,1 @@
+docker run -p 8080:8080 -it -v /home/stefan/wf-nanoporeata/:/nanoporeata -v /home/stefan/GiantDisk/run_dir_HEK_Hela_test_wf/:/data -e 'SHINYDATA=/data/' -e 'PORT=8080' --workdir=/nanoporeata/app/ stegiopast/shiny Rscript app.R

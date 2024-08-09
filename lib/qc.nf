@@ -5,8 +5,12 @@ import java.time.LocalDateTime
 
 
 process RunDevelopmentEstimation{
+    stageInMode "copy"
     label "nanoporeata"
-    publishDir "${params.output_dir}"
+    publishDir(
+        path: "${params.output_dir}",
+        mode: 'move'
+    )
     maxForks 1
     cpus 4
 
@@ -37,8 +41,11 @@ process RunDevelopmentEstimation{
 }
 
 
-process CountMappedReads{
-    publishDir "${params.output_dir}/mapped_reads/"
+process CountMappedReads{ 
+    publishDir(
+        path: "${params.output_dir}/mapped_reads/",
+        mode: 'copy'
+    )
     input:
     tuple val(ID), path(bam)
     path(bai)
@@ -53,7 +60,10 @@ process CountMappedReads{
 }
 
 process MergeMappedReadsTable{
-    publishDir "${params.output_dir}"
+    publishDir(
+        path: "${params.output_dir}",
+        mode: 'copy'
+    )
     input:
     tuple val(ID), path(count_csv)
     path(metadata)
@@ -116,12 +126,14 @@ process UpdateReadLengthDistribution{
 }
 
 process PublishReadLengthDistribution{
-    publishDir("${params.output_dir}/ReadLengthFolder")
+    publishDir(path: "${params.output_dir}/ReadLengthFolder",
+               mode: "copy"
+    )
     input:
     path(final_read_lengths)
 
     output:
-    path("*_read_length_pass.txt")
+    path("*_read_length_pass.txt", arity:"0..*")
 
     script:
     """

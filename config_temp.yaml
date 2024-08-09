@@ -5,10 +5,9 @@ transcriptome_fasta: /home/stefan/BigDisk/Work/Gerber_AG/gencode.v40.transcripts
 genome_gtf: /home/stefan/BigDisk/Work/Gerber_AG/gencode.v40.primary_assembly.annotation.gtf
 bed_file: /home/stefan/BigDisk/Work/Gerber_AG/hg38_GENCODE.v38.bed
 output_dir: /home/stefan/GiantDisk/run_dir_HEK_Hela_test_wf/
-script_dir: /home/stefan/testApp/app/server/scripts_nextflow/
 barcoded: 1
 batchsize: 5
 drs: 1
-threads: 16
+threads: 4
 suffix: ""
 sample_names: []

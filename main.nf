@@ -6,24 +6,18 @@ import java.time.LocalDateTime
 nextflow.enable.dsl = 2
 nextflow.preview.recursion=true 
 
-// seq_data_folder = "/home/charlotte/heackaton/HEK_HeLa_Experiment_folder/HEK_HeLa/20230323_1311_MN32609_FAQ51879_03abc106/fastq_pass/"
-// output_dir = "~/out_dir"
-// metadata = null
-// barcoded = null
-// genome_gtf = "/home/charlotte/heackaton/gencode.v43.primary_assembly.annotation.chr20.gtf"
-// bed_file = null
-// genome_fasta = null
-// genome_index = "runMT-human_ont.mmi"
-// transcriptome_fasta = null
-
-include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path } from "./lib/initialize.nf"
-include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome } from "./lib/alignment.nf"
+include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path ; fetch_latest_bams ; CreateGenomeBamFilesForMerge; CreateTranscriptomeBamFilesForMerge; CopyBedfileAndMetadata } from "./lib/initialize.nf"
+include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome ; MinimapGenomeMergeBam ; MinimapTranscriptomeMergeBam; FindMergedGenomeBams; FindMergedTranscriptomeBams } from "./lib/alignment.nf"
 include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
-include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; DefineReadLengthDistribution; UpdateReadLengthDistribution; PublishReadLengthDistribution} from "./lib/qc.nf"
+include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; DefineReadLengthDistribution; UpdateReadLengthDistribution; PublishReadLengthDistribution } from "./lib/qc.nf"
 
 
 workflow {
+    // Limit parralelsims globally
+    CreateGenomeBamFilesForMerge(file("${params.metadata}"))
+    CreateTranscriptomeBamFilesForMerge(file("${params.metadata}"))
+    CopyBedfileAndMetadata(file("${params.bed_file}"), file("${params.metadata}"))
     feature_percentiles = CreateFeaturePercentiles(file("${params.bed_file}"))
     index_output = MinimapIndex(file("${params.genome_fasta}"),file("${params.transcriptome_fasta}"))
     conversion_output = ConvertGtfToDf(file("${params.genome_gtf}"))
@@ -42,6 +36,14 @@ workflow {
     UpdateIterator(PublishFeatureCountTable.out)
     RunDevelopmentEstimation(UpdateIterator.out.run_statistics, PublishFeatureCountTable.out.merged_all, file("${params.output_dir}/inner_variability_plot.csv"),file("${params.output_dir}/inner_variability_per_sample.csv"),file("${params.output_dir}/exp_genes_counted_per_sample.csv"))
     DESeq2Genome(UpdateIterator.out.run_statistics,PublishFeatureCountTable.out.merged_all,file("${params.metadata}"))
+
+    //Merge single bams 
+    
+    //def latest_bams_genome = fetch_latest_bams("${params.output_dir}/bam_genome_merged/")
+    //found_genome_bams = FindMergedGenomeBams(minimap_genome_output.aligned_bams)
+    // def genome_bams = file("${params.output_dir}/bam_genome_merged/*.bam").collect()
+    MinimapGenomeMergeBam(minimap_genome_output.aligned_bams, channel.fromPath("${params.output_dir}/bam_genome_merged/*.bam").collect())
+    
 
     //Run read mapping quantification
     counted_reads = CountMappedReads(minimap_genome_output.aligned_bams, minimap_genome_output.aligned_bam_bais)
@@ -63,6 +65,11 @@ workflow {
     DESeq2Transcriptome(UpdateIterator2.out.run_statistics,PublishSalmonTable.out.merged_all,file("${params.metadata}"))
     DTUanalysis(DESeq2Transcriptome.out.dea_transcriptome_done,PublishSalmonTable.out.merged_all,file("${params.metadata}"), file("${params.output_dir}/converted_gtf.csv"))
     
+
+    //def latest_bams_transcriptome = fetch_latest_bams("${params.output_dir}/bam_transcriptome_merged/")
+    //found_transcriptome_bams = FindMergedTranscriptomeBams(minimap_transcript_output.aligned_bams)
+    //def transcriptome_bams = fetch_latest_bams("${params.output_dir}/bam_transcriptome_merged/")
+    MinimapTranscriptomeMergeBam(minimap_transcript_output.aligned_bams, channel.fromPath("${params.output_dir}/bam_transcriptome_merged/*.bam").collect())
     //Process run time
     // ProcessingTimeRegistration(file("${params.output_dir}/processing_time_table.csv"),minimap_genome_output.timestamp,UpdateIterator.out.timestamp,minimap_transcript_output.timestamp,UpdateIterator2.out.timestamp)
 

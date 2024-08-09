@@ -1,5 +1,6 @@
 import groovy.json.JsonBuilder
-@Grab('com.xlson.groovycsv:groovycsv:1.1')
+@GrabResolver(name='central', root='https://repo1.maven.org/maven2/')
+@Grapes(@Grab(group='com.xlson.groovycsv', module='groovycsv', version='1.3'))
 import static com.xlson.groovycsv.CsvParser.parseCsv
 import java.io.File;
 

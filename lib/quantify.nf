@@ -103,6 +103,7 @@ process Salmon{
     label "nanoporeata"
     maxForks 1
     cpus 4
+    memory "10GB"
     input:
         tuple val(ID), path(bam)
         path genome_gtf
@@ -190,6 +191,7 @@ process DESeq2Genome {
     maxForks 1
     cpus 4
     maxRetries 10
+    memory "10GB"
     input:
         val run_statistics
         path count_table
@@ -264,7 +266,7 @@ process DTUanalysis{
 
 
 process UpdateIterator{
-    publishDir "${params.output_dir}"
+    publishDir(path: "${params.output_dir}", mode: "copy")
     input:
     path feature_count_merged
 
@@ -293,7 +295,7 @@ process UpdateIterator{
 
 
 process UpdateIterator2{
-    publishDir "${params.output_dir}"
+    publishDir(path: "${params.output_dir}", mode: "copy")
     input:
     path salmon_count_merged
 
