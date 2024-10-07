@@ -189,7 +189,7 @@ process data_alignment_prep{
         println "Data seen: ${params.data_seen_list.size()}"
         data_seen_string = ""
         data_string = ""  
-        File file_tmp = new File("${params.output_dir}data_seen_tmp_processed.txt")
+        File file_tmp = new File("${params.out_dir}data_seen_tmp_processed.txt")
         file_tmp.write("")
         for(i in 0..params.data_seen_list.size()-1){
             if (params.data_seen_list.size() > 0){
@@ -207,62 +207,62 @@ process data_alignment_prep{
         corruption_transcript_bam=0
         bam_files_seen=" "
         bam_files_seen_transcripts=" "
-        for ((i=1; i<=\$(cat ${params.output_dir}data_seen_tmp_processed.txt | wc -l); i++))
+        for ((i=1; i<=\$(cat ${params.out_dir}data_seen_tmp_processed.txt | wc -l); i++))
         do
-            I=\$(sed -n \$((\$i))p ${params.output_dir}data_seen_tmp_processed.txt)
+            I=\$(sed -n \$((\$i))p ${params.out_dir}data_seen_tmp_processed.txt)
             if [ ${params.barcoded} -eq 1 ]
             then
                 basis=\$(basename \$(dirname \${I}))
                 filename=\$(basename \${I})
                 converted_filename=\${filename/${params.suffix}/bam}
-                outname=${params.output_dir}\${basis}/bam_files/\${converted_filename}
-                outname_transcripts=${params.output_dir}\${basis}/bam_files_transcripts/\${converted_filename}
+                outname=${params.out_dir}\${basis}/bam_files/\${converted_filename}
+                outname_transcripts=${params.out_dir}\${basis}/bam_files_transcripts/\${converted_filename}
             else
                 basis=\$(basename \$(dirname \$(dirname \$(dirname \${I}))))
                 filename=\$(basename \${I})
                 converted_filename=\${filename/${params.suffix}/bam}
-                outname=${params.output_dir}\${basis}/bam_files/\${converted_filename}
-                outname_transcripts=${params.output_dir}\${basis}/bam_files_transcripts/\${converted_filename}
+                outname=${params.out_dir}\${basis}/bam_files/\${converted_filename}
+                outname_transcripts=${params.out_dir}\${basis}/bam_files_transcripts/\${converted_filename}
             fi
             bam_files_seen=\${bam_files_seen}\${outname}" "
             bam_files_seen_transcripts=\${bam_files_seen_transcripts}\${outname_transcripts}" "
         done
         for i in ${data_string}
         do
-            files_in_i=\$(ls ${params.output_dir}\${i}/bam_files/)
-            files_in_i_transcripts=\$(ls ${params.output_dir}\${i}/bam_files_transcripts/)
+            files_in_i=\$(ls ${params.out_dir}\${i}/bam_files/)
+            files_in_i_transcripts=\$(ls ${params.out_dir}\${i}/bam_files_transcripts/)
             for j in \$files_in_i
                 do
-                    if [[ ! "\$bam_files_seen" =~ "${params.output_dir}\${i}/bam_files/\${j}" ]]
+                    if [[ ! "\$bam_files_seen" =~ "${params.out_dir}\${i}/bam_files/\${j}" ]]
                     then
-                        if [[ ! -d ${params.output_dir}\${i}/bam_files/\${j} ]]
+                        if [[ ! -d ${params.out_dir}\${i}/bam_files/\${j} ]]
                         then
-                            rm ${params.output_dir}\${i}/bam_files/\${j} && echo ${params.output_dir}\${i}/bam_files/\${j} >> ${params.output_dir}error_logs/removed_bam_files.txt
+                            rm ${params.out_dir}\${i}/bam_files/\${j} && echo ${params.out_dir}\${i}/bam_files/\${j} >> ${params.out_dir}error_logs/removed_bam_files.txt
                             corruption_gene_bam=1
-                            echo "1" > ${params.output_dir}corruption_cleanup.txt
+                            echo "1" > ${params.out_dir}corruption_cleanup.txt
                         fi
                     fi
                 done
             for j in \$files_in_i_transcripts
                 do
-                    if [[ ! "\$bam_files_seen_transcripts" =~ "${params.output_dir}\${i}/bam_files_transcripts/\${j}" ]]
+                    if [[ ! "\$bam_files_seen_transcripts" =~ "${params.out_dir}\${i}/bam_files_transcripts/\${j}" ]]
                     then
-                        if [[ ! -d ${params.output_dir}\${i}/bam_files_transcripts/\${j} ]]
+                        if [[ ! -d ${params.out_dir}\${i}/bam_files_transcripts/\${j} ]]
                         then
-                            rm ${params.output_dir}\${i}/bam_files_transcripts/\${j} && echo ${params.output_dir}\${i}/bam_files_transcripts/\${j} >> ${params.output_dir}error_logs/removed_bam_files_transcripts.txt
+                            rm ${params.out_dir}\${i}/bam_files_transcripts/\${j} && echo ${params.out_dir}\${i}/bam_files_transcripts/\${j} >> ${params.out_dir}error_logs/removed_bam_files_transcripts.txt
                             corruption_transcript_bam=1
                         fi
                     fi
                 done
         done
-        echo \$corruption_gene_bam >> ${params.output_dir}error_logs/corruption_gene.log
+        echo \$corruption_gene_bam >> ${params.out_dir}error_logs/corruption_gene.log
         function samtoolsParallelAll  {
-            if [ ! \$(ls ${params.output_dir}\$1/bam_files/*.bam | wc -l) -eq 0 ]
+            if [ ! \$(ls ${params.out_dir}\$1/bam_files/*.bam | wc -l) -eq 0 ]
             then
                 par_basis=\$1
                 run_dir=\$2
                 sample=\${run_dir}\${par_basis}/bam_files/
-                echo "Running samtoolsParallelAll" >> ${params.output_dir}error_logs/samtoolsParallelall_running.log
+                echo "Running samtoolsParallelAll" >> ${params.out_dir}error_logs/samtoolsParallelall_running.log
                 sample_transcripts=\${run_dir}\${par_basis}/bam_files_transcripts/
                 samtools merge \${run_dir}\${par_basis}/all_gene.bam \${sample}*.bam -f --threads ${params.threads} -c -p || echo "\${sample}" >> \${run_dir}error_logs/bam_file_genome_merge_after_corruption_error.log
                 cp \${run_dir}\${par_basis}/all_gene.bam \${run_dir}bam_genome_merged/\${par_basis}.bam
@@ -277,9 +277,9 @@ process data_alignment_prep{
         par_basis=\$1
         run_dir=\$2
         data_to_process=""
-        for ((i=1; i<=\$(cat ${params.output_dir}data_seen_tmp_processed.txt | wc -l); i++))
+        for ((i=1; i<=\$(cat ${params.out_dir}data_seen_tmp_processed.txt | wc -l); i++))
         do
-            I=\$(sed -n \$((\$i))p ${params.output_dir}data_seen_tmp_processed.txt)
+            I=\$(sed -n \$((\$i))p ${params.out_dir}data_seen_tmp_processed.txt)
             if [ ${params.barcoded} -eq 1 ]
             then
             basis=\$(basename \$(dirname \$I))
@@ -315,21 +315,21 @@ process data_alignment_prep{
         export -f fastqmergeParallel 
        
 
-        if [ -f ${params.output_dir}corruption_cleanup.txt ]
+        if [ -f ${params.out_dir}corruption_cleanup.txt ]
         then
-            cleanup=\$(cat ${params.output_dir}corruption_cleanup.txt)
+            cleanup=\$(cat ${params.out_dir}corruption_cleanup.txt)
             if [ \$cleanup -eq 1 ]
             then 
-            parallel -v -u --env samtoolsParallelAll --no-notice -j ${params.threads} samtoolsParallelAll ::: ${data_string} ::: ${params.output_dir}
-            parallel -v -u --env fastqmergeParallel --no-notice -j ${params.threads} fastqmergeParallel ::: ${data_string} ::: ${params.output_dir}
+            parallel -v -u --env samtoolsParallelAll --no-notice -j ${params.threads} samtoolsParallelAll ::: ${data_string} ::: ${params.out_dir}
+            parallel -v -u --env fastqmergeParallel --no-notice -j ${params.threads} fastqmergeParallel ::: ${data_string} ::: ${params.out_dir}
             fi
         fi
-        if [ ! -f ${params.output_dir}processing_time_table.csv ]
+        if [ ! -f ${params.out_dir}processing_time_table.csv ]
             then
-                echo "Tool,Iteration,Time" >> ${params.output_dir}processing_time_table.csv
+                echo "Tool,Iteration,Time" >> ${params.out_dir}processing_time_table.csv
             fi
         iteration=${iteration.value}
-        echo \$((\${iteration})) > ${params.output_dir}/current_iteration.txt
+        echo \$((\${iteration})) > ${params.out_dir}/current_iteration.txt
         """
 }
 
@@ -356,7 +356,7 @@ process reawake_next_round{
     exec:
     if (fc_string != ""){
     println "Feature Count merge done for current iteration"
-    File file = new File("${params.output_dir}data_seen.txt")
+    File file = new File("${params.out_dir}data_seen.txt")
     if (string_array.size() > 0){
         for (i in 0..string_array.size()-1){
             lines = file.readLines()
@@ -367,7 +367,7 @@ process reawake_next_round{
     if (fc_string == ""){
     sleep(30000)
     }
-    def continue_text = new File("${params.output_dir}process_running.txt").getText()
+    def continue_text = new File("${params.out_dir}process_running.txt").getText()
     println "Continue ?"
     println continue_text
     println "____________"
@@ -376,10 +376,10 @@ process reawake_next_round{
         checkup << Channel.from(1)
     }
     else {
-        def continue_text2 = new File("${params.output_dir}process_running.txt")
+        def continue_text2 = new File("${params.out_dir}process_running.txt")
         continue_text2.write "2"
         while(continue_bool.value != 1){
-            def continue_text3 = new File("${params.output_dir}process_running.txt").getText()
+            def continue_text3 = new File("${params.out_dir}process_running.txt").getText()
             continue_bool.value = continue_text3.toInteger()
             if ( continue_bool.value == 1){
                 println "Going to continue"

@@ -36,7 +36,7 @@ process FeatureCount {
 
 process CleanFeatureCountTable {
     label "nanoporeata"
-    //publishDir "${params.output_dir}", mode: "copy"
+    //publishDir "${params.out_dir}", mode: "copy"
     maxForks 1
     input:
         tuple val(ID),path(single_fc)
@@ -75,7 +75,7 @@ process UpdateFeatureCountTable {
 
 process PublishFeatureCountTable {
     label "nanoporeata"
-    publishDir "${params.output_dir}", mode:"copy"
+    publishDir "${params.out_dir}", mode:"copy"
     maxForks 1
     input:
         path merged_csv
@@ -121,7 +121,7 @@ process Salmon{
 
 process CleanSalmonTable{
     label "nanoporeata"
-    //publishDir "${params.output_dir}", mode: "copy"
+    //publishDir "${params.out_dir}", mode: "copy"
     maxForks 1
     input:
         tuple val(ID),path(single_salmon)
@@ -161,7 +161,7 @@ process UpdateSalmonTable{
 
 process PublishSalmonTable{
     label "nanoporeata"
-    publishDir "${params.output_dir}", mode:"copy"
+    publishDir "${params.out_dir}", mode:"copy"
     maxForks 1
     input:
         path merged_csv
@@ -187,7 +187,7 @@ process PublishSalmonTable{
 
 process DESeq2Genome {
     label "R"
-    publishDir (path: "${params.output_dir}", mode: 'copy')
+    publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
     cpus 4
     maxRetries 10
@@ -211,7 +211,7 @@ process DESeq2Genome {
 
 process DESeq2Transcriptome{
     label "R"
-    publishDir (path: "${params.output_dir}", mode: 'copy')
+    publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
     cpus 4
     maxRetries 10
@@ -234,7 +234,7 @@ process DESeq2Transcriptome{
 
 process DTUanalysis{
     label "R"
-    publishDir (path: "${params.output_dir}", mode: 'copy')
+    publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
     maxRetries 10 
     input:
@@ -266,7 +266,7 @@ process DTUanalysis{
 
 
 process UpdateIterator{
-    publishDir(path: "${params.output_dir}", mode: "copy")
+    publishDir(path: "${params.out_dir}", mode: "copy")
     input:
     path feature_count_merged
 
@@ -295,7 +295,7 @@ process UpdateIterator{
 
 
 process UpdateIterator2{
-    publishDir(path: "${params.output_dir}", mode: "copy")
+    publishDir(path: "${params.out_dir}", mode: "copy")
     input:
     path salmon_count_merged
 

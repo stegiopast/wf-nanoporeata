@@ -4,7 +4,7 @@ import java.io.File
 
 process ConvertGtfToDf{ 
     publishDir(
-        path: "${params.output_dir}/",
+        path: "${params.out_dir}/",
         mode: 'move'
     )
     maxForks 3
@@ -25,7 +25,7 @@ process ConvertGtfToDf{
 
 process CopyBedfileAndMetadata{ 
     publishDir(
-        path: "${params.output_dir}/",
+        path: "${params.out_dir}/",
         mode: 'copy'
     )
     maxForks 3
@@ -79,7 +79,7 @@ def start_watch_path(){
 process CreateFeaturePercentiles{
     stageInMode "copy"
     publishDir(
-        path: "${params.output_dir}/", 
+        path: "${params.out_dir}/", 
         mode: 'move'
     )
     maxForks 3
@@ -101,7 +101,7 @@ def fetch_latest_bams(dir){
 }
 
 process CreateGenomeBamFilesForMerge{
-    publishDir(path: "${params.output_dir}/bam_genome_merged/", mode: "copy", overwrite: false)
+    publishDir(path: "${params.out_dir}/bam_genome_merged/", mode: "copy", overwrite: false)
     input:
     path(metadata)
     output:
@@ -112,7 +112,7 @@ process CreateGenomeBamFilesForMerge{
 }
 
 process CreateTranscriptomeBamFilesForMerge{
-    publishDir(path: "${params.output_dir}/bam_transcriptome_merged/", mode: "copy", overwrite: false)
+    publishDir(path: "${params.out_dir}/bam_transcriptome_merged/", mode: "copy", overwrite: false)
     input:
     path(metadata)
     output:

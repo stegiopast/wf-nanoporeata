@@ -9,8 +9,7 @@ import java.time.LocalDateTime
 process MinimapIndex {
     label "nanoporeata"
     publishDir(
-        path: "${params.output_dir}",
-        mode: 'copy'
+        path: "${params.out_dir}"
     )
     maxForks 1
     maxRetries 10 
@@ -20,7 +19,8 @@ process MinimapIndex {
     path transcriptome_fasta 
 
     output:
-    path("*")
+    path("genome_index.mmi")
+    path("transcriptome_index.mmi")
     val 1,emit: done
 
     script:
@@ -38,21 +38,19 @@ process MinimapIndex {
 
 
 
-
-
 process MinimapGenome {
     label "nanoporeata"
     publishDir(
-        path: "${params.output_dir}/${ID}/bam_files/",
+        path: "${params.out_dir}/${ID}/bam_files/",
         mode: 'copy'
     )
     maxForks 1
     memory "14GB"
     maxRetries 10
-    cpus 4
+    cpus 8
     input:
     tuple val(ID), path(fastq)
-    path fasta
+    path fasta, stageAs: 'genome_index.mmi'
     val done
     val done2
 
@@ -65,10 +63,16 @@ process MinimapGenome {
     """
     if [ ${params.drs} -eq 1 ]
     then
-        minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam
+        minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} genome_index.mmi ${fastq} > output.sam
+        samtools view -hbS output.sam -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
+        rm output.sam
+        #minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hb -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
         samtools index genes_${ID}.out${task.index}.bam
     else
-        minimap2 --MD -ax splice -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > genes_${ID}.out${task.index}.bam 
+        #minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hb -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam 
+        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} > output.sam
+        samtools view -hbS output.sam -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
+        rm output.sam
         samtools index genes_${ID}.out${task.index}.bam
     fi
     """
@@ -83,12 +87,12 @@ process MinimapGenomeMergeBam{
     maxForks 1
     memory "12GB"
     publishDir(
-        path: "${params.output_dir}/bam_genome_merged/",
+        path: "${params.out_dir}/bam_genome_merged/",
         mode: 'move'
     )
     input:
         tuple val(ID), path(bam)
-        //file("${params.output_dir}/bam_genome_merged/*.bam")
+        //file("${params.out_dir}/bam_genome_merged/*.bam")
         path bamFiles
     output:
         path("${ID}.bam")
@@ -133,7 +137,7 @@ process FindMergedGenomeBams{
         tuple val(ID), path(bam), emit: aligned_bams
         path(files), emit: merged_bams
     script:
-        files="${params.output_dir}/bam_genome_merged/${ID}.bam"
+        files="${params.out_dir}/bam_genome_merged/${ID}.bam"
     """
     """
 }
@@ -141,7 +145,7 @@ process FindMergedGenomeBams{
 process MinimapTranscriptome {
     label "nanoporeata"
     publishDir(
-        path: "${params.output_dir}/${ID}/bam_files_transcripts/",
+        path: "${params.out_dir}/${ID}/bam_files_transcripts/",
         mode: 'copy',
     )
     maxForks 1
@@ -150,7 +154,7 @@ process MinimapTranscriptome {
     cpus 4
     input:
     tuple val(ID), path(fastq)
-    path fasta
+    path fasta, stageAs: 'transcriptome_index.mmi'
     val done
     val done2
 
@@ -163,10 +167,16 @@ process MinimapTranscriptome {
     """
     if [ ${params.drs} -eq 1 ]
     then
-        minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        #minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 | samtools sort -o transcripts_${ID}.out${task.index}.bam
+        minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} transcriptome_index.mmi ${fastq} > output.sam
+        samtools view -hbS -F 3844 output.sam | samtools sort -o transcripts_${ID}.out${task.index}.bam
+        rm output.sam
         samtools index transcripts_${ID}.out${task.index}.bam
     else
-        minimap2 --MD -ax map-ont -t ${task.cpus} ${fasta} ${fastq} | samtools view -hbS -F 3844 | samtools sort > transcripts_${ID}.out${task.index}.bam
+        #minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 | samtools sort -o transcripts_${ID}.out${task.index}.bam
+        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} > output.sam
+        samtools view -hbS -F 3844 output.sam | samtools sort -o transcripts_${ID}.out${task.index}.bam
+        rm output.sam
         samtools index transcripts_${ID}.out${task.index}.bam
     fi
     """
@@ -179,7 +189,7 @@ process FindMergedTranscriptomeBams{
         tuple val(ID), path(bam), emit: aligned_bams
         path(files), emit: merged_bams
     script:
-        files="${params.output_dir}/bam_transcriptome_merged/${ID}.bam"
+        files="${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
     """
     """
 }
@@ -192,12 +202,12 @@ process MinimapTranscriptomeMergeBam{
     maxForks 1
     memory "12GB"
     publishDir(
-        path: "${params.output_dir}/bam_transcriptome_merged/",
+        path: "${params.out_dir}/bam_transcriptome_merged/",
         mode: 'move'
     )
     input:
         tuple val(ID), path(bam)
-        //file("${params.output_dir}/bam_genome_merged/*.bam")
+        //file("${params.out_dir}/bam_genome_merged/*.bam")
         path bamFiles
     output:
         path("${ID}.bam"), emit: bam_merged

@@ -8,7 +8,7 @@ process RunDevelopmentEstimation{
     stageInMode "copy"
     label "nanoporeata"
     publishDir(
-        path: "${params.output_dir}",
+        path: "${params.out_dir}",
         mode: 'move'
     )
     maxForks 1
@@ -43,7 +43,7 @@ process RunDevelopmentEstimation{
 
 process CountMappedReads{ 
     publishDir(
-        path: "${params.output_dir}/mapped_reads/",
+        path: "${params.out_dir}/mapped_reads/",
         mode: 'copy'
     )
     input:
@@ -61,7 +61,7 @@ process CountMappedReads{
 
 process MergeMappedReadsTable{
     publishDir(
-        path: "${params.output_dir}",
+        path: "${params.out_dir}",
         mode: 'copy'
     )
     input:
@@ -126,7 +126,7 @@ process UpdateReadLengthDistribution{
 }
 
 process PublishReadLengthDistribution{
-    publishDir(path: "${params.output_dir}/ReadLengthFolder",
+    publishDir(path: "${params.out_dir}/ReadLengthFolder",
                mode: "copy"
     )
     input:
@@ -145,7 +145,7 @@ process PublishReadLengthDistribution{
 
 
 // process ProcessingTimeRegistration{
-//     publishDir "${params.output_dir}"
+//     publishDir "${params.out_dir}"
 //     input:
 //     path(time_table), stageAs: "previous_table.csv"
 //     val(genome_process_start)
