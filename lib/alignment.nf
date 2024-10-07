@@ -8,8 +8,8 @@ import java.time.LocalDateTime
 
 process MinimapIndex {
     label "nanoporeata"
-    publishDir (
-        path: "${params.output_dir}"
+    publishDir(
+        path: "${params.output_dir}",
         mode: 'copy'
     )
     maxForks 1
@@ -89,7 +89,7 @@ process MinimapGenomeMergeBam{
     input:
         tuple val(ID), path(bam)
         //file("${params.output_dir}/bam_genome_merged/*.bam")
-        path 
+        path bamFiles
     output:
         path("${ID}.bam")
         path("${ID}.bam.bai")
@@ -198,7 +198,7 @@ process MinimapTranscriptomeMergeBam{
     input:
         tuple val(ID), path(bam)
         //file("${params.output_dir}/bam_genome_merged/*.bam")
-        path 
+        path bamFiles
     output:
         path("${ID}.bam"), emit: bam_merged
         path("${ID}.bam.bai"), emit: bai_merged

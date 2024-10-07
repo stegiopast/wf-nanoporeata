@@ -133,7 +133,7 @@ process PublishReadLengthDistribution{
     path(final_read_lengths)
 
     output:
-    path("*_read_length_pass.txt", arity:"0..*")
+    path("*_read_length_pass.txt", optional:true)
 
     script:
     """

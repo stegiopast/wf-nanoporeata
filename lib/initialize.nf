@@ -3,7 +3,10 @@ import nextflow.util.BlankSeparatedList
 import java.io.File
 
 process ConvertGtfToDf{ 
-    publishDir(path: "${params.output_dir}/",mode: "copy")
+    publishDir(
+        path: "${params.output_dir}/",
+        mode: 'move'
+    )
     maxForks 3
     memory "8GB"
     maxRetries 10
@@ -21,7 +24,10 @@ process ConvertGtfToDf{
 }
 
 process CopyBedfileAndMetadata{ 
-    publishDir(path: "${params.output_dir}/",mode: "copy")
+    publishDir(
+        path: "${params.output_dir}/",
+        mode: 'copy'
+    )
     maxForks 3
     memory "8GB"
     maxRetries 10
@@ -72,7 +78,10 @@ def start_watch_path(){
 
 process CreateFeaturePercentiles{
     stageInMode "copy"
-    publishDir (path: "${params.output_dir}/", mode: "move")
+    publishDir(
+        path: "${params.output_dir}/", 
+        mode: 'move'
+    )
     maxForks 3
     memory "8GB"
     input:
