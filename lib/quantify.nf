@@ -302,11 +302,14 @@ process UpdateIterator2{
     output:
     val(run_statistics), emit: run_statistics
 
-    exec:
+    script:
     if ((task.index % params.batchsize) == 0){
         run_statistics = 1
     }
     else{
         run_statistics = 0
     }
+    """
+    echo "Done"
+    """
 }

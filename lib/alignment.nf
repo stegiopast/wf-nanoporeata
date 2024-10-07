@@ -13,6 +13,7 @@ process MinimapIndex {
     )
     maxForks 1
     maxRetries 10 
+    errorStrategy 'retry'
     memory "25GB"
     input:
     path genome_fasta
@@ -47,7 +48,8 @@ process MinimapGenome {
     maxForks 1
     memory "14GB"
     maxRetries 10
-    cpus 8
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
+    cpus 4
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'genome_index.mmi'
@@ -83,7 +85,7 @@ process MinimapGenome {
 process MinimapGenomeMergeBam{
     label "nanoporeata"
     cpus 2
-    maxRetries 1
+    maxRetries 10
     maxForks 1
     memory "12GB"
     publishDir(
@@ -151,13 +153,13 @@ process MinimapTranscriptome {
     maxForks 1
     memory "14GB"
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
     cpus 4
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'transcriptome_index.mmi'
     val done
     val done2
-
 
     output: 
     tuple val(ID), path("transcripts_${ID}.out${task.index}.bam"), emit: aligned_bams 
@@ -198,7 +200,7 @@ process FindMergedTranscriptomeBams{
 process MinimapTranscriptomeMergeBam{
     label "nanoporeata"
     cpus 2
-    maxRetries 1
+    maxRetries 10
     maxForks 1
     memory "12GB"
     publishDir(

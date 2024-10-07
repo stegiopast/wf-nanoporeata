@@ -11,6 +11,7 @@ process RunDevelopmentEstimation{
         path: "${params.out_dir}",
         mode: 'move'
     )
+    maxRetries 10
     maxForks 1
     cpus 4
 
@@ -46,6 +47,7 @@ process CountMappedReads{
         path: "${params.out_dir}/mapped_reads/",
         mode: 'copy'
     )
+    maxRetries 10
     input:
     tuple val(ID), path(bam)
     path(bai)
@@ -64,6 +66,7 @@ process MergeMappedReadsTable{
         path: "${params.out_dir}",
         mode: 'copy'
     )
+    maxRetries 10
     input:
     tuple val(ID), path(count_csv)
     path(metadata)
@@ -87,7 +90,7 @@ process DefineReadLengthDistribution{
     input:
     tuple val(ID), path(fastq_file)
     path(metadata)
-    
+    maxRetries 10
     output:
     path("${ID}_read_lengths_${task.index}.csv")
 
@@ -107,7 +110,7 @@ process DefineReadLengthDistribution{
 process UpdateReadLengthDistribution{
     input:
     path(output)
-
+    maxRetries 10
     output:
     path("final_read_lengths_${task.index}.csv")
 
@@ -129,6 +132,7 @@ process PublishReadLengthDistribution{
     publishDir(path: "${params.out_dir}/ReadLengthFolder",
                mode: "copy"
     )
+    maxRetries 10
     input:
     path(final_read_lengths)
 
