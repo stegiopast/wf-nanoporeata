@@ -46,10 +46,11 @@ process MinimapGenome {
         mode: 'copy'
     )
     maxForks 1
-    memory "14GB"
+    memory "20GB"
     maxRetries 10
     errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
-    cpus 4
+    cpus 8
+
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'genome_index.mmi'
@@ -58,10 +59,11 @@ process MinimapGenome {
 
 
     output: 
-    tuple val(ID), path("genes_${ID}.out${task.index}.bam"), emit: aligned_bams 
+    tuple val(ID), path("genes_${ID}.out${task.index}.bam"), val(hostpath), emit: aligned_bams 
     path("genes_${ID}.out${task.index}.bam.bai"), emit:aligned_bam_bais
 
     script:
+    hostpath = "${params.out_dir}/bam_genome_merged/${ID}.bam"
     """
     if [ ${params.drs} -eq 1 ]
     then
@@ -93,9 +95,8 @@ process MinimapGenomeMergeBam{
         mode: 'move'
     )
     input:
-        tuple val(ID), path(bam)
+        tuple val(ID), path(bam), path(bamFile)
         //file("${params.out_dir}/bam_genome_merged/*.bam")
-        path bamFiles
     output:
         path("${ID}.bam")
         path("${ID}.bam.bai")
@@ -112,12 +113,12 @@ process MinimapGenomeMergeBam{
             grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
             grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
             samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
-            rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            #rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
             cp ${bam} final.bam
-            rm -f barcode*.bam unclassified.bam
+            #rm -f barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
@@ -125,36 +126,37 @@ process MinimapGenomeMergeBam{
     else
         cp ${bam} final.bam
         samtools sort final.bam > final_sorted.bam
-        rm -f final.bam barcode*.bam unclassified.bam
+        #rm -f final.bam barcode*.bam unclassified.bam
         mv final_sorted.bam ${ID}.bam
         samtools index ${ID}.bam
     fi
     """
 }
 
-process FindMergedGenomeBams{
-    input:
-        tuple val(ID), path(bam)
-    output:
-        tuple val(ID), path(bam), emit: aligned_bams
-        path(files), emit: merged_bams
-    script:
-        files="${params.out_dir}/bam_genome_merged/${ID}.bam"
-    """
-    """
-}
+// process FindMergedGenomeBams{
+//     input:
+//         tuple val(ID), path(bam)
+//     output:
+//         tuple val(ID), path(bam), emit: aligned_bams
+//         path(files), emit: merged_bams
+//     script:
+//         files="${params.out_dir}/bam_genome_merged/${ID}.bam"
+//     """
+//     """
+// }
 
 process MinimapTranscriptome {
     label "nanoporeata"
     publishDir(
         path: "${params.out_dir}/${ID}/bam_files_transcripts/",
-        mode: 'copy',
+        mode: 'copy'
     )
     maxForks 1
-    memory "14GB"
+    memory "20GB"
     maxRetries 10
+    cpus 8
     errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
-    cpus 4
+    
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'transcriptome_index.mmi'
@@ -162,10 +164,11 @@ process MinimapTranscriptome {
     val done2
 
     output: 
-    tuple val(ID), path("transcripts_${ID}.out${task.index}.bam"), emit: aligned_bams 
+    tuple val(ID), path("transcripts_${ID}.out${task.index}.bam"), val(hostpath), emit: aligned_bams 
     path("transcripts_${ID}.out${task.index}.bam.bai")
 
     script:
+    hostpath = "${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
     """
     if [ ${params.drs} -eq 1 ]
     then
@@ -184,17 +187,17 @@ process MinimapTranscriptome {
     """
 }
 
-process FindMergedTranscriptomeBams{
-    input:
-        tuple val(ID), path(bam)
-    output:
-        tuple val(ID), path(bam), emit: aligned_bams
-        path(files), emit: merged_bams
-    script:
-        files="${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
-    """
-    """
-}
+// process FindMergedTranscriptomeBams{
+//     input:
+//         tuple val(ID), path(bam)
+//     output:
+//         tuple val(ID), path(bam), emit: aligned_bams
+//         path(files), emit: merged_bams
+//     script:
+//         files="${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
+//     """
+//     """
+// }
 
 
 process MinimapTranscriptomeMergeBam{
@@ -208,9 +211,8 @@ process MinimapTranscriptomeMergeBam{
         mode: 'move'
     )
     input:
-        tuple val(ID), path(bam)
+        tuple val(ID), path(bam), path(bamfile)
         //file("${params.out_dir}/bam_genome_merged/*.bam")
-        path bamFiles
     output:
         path("${ID}.bam"), emit: bam_merged
         path("${ID}.bam.bai"), emit: bai_merged
@@ -227,20 +229,20 @@ process MinimapTranscriptomeMergeBam{
             grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
             grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
             samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
-            rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            #rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
             cp ${bam} final.bam
             samtools sort final.bam > final_sorted.bam
-            rm -f final.bam barcode*.bam unclassified.bam
+            #rm -f final.bam barcode*.bam unclassified.bam
             mv final_sorted.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
     else
         cp ${bam} final.bam
         samtools sort final.bam > final_sorted.bam
-        rm -f final.bam barcode*.bam unclassified.bam
+        #rm -f final.bam barcode*.bam unclassified.bam
         mv final_sorted.bam ${ID}.bam
         samtools index ${ID}.bam
     fi

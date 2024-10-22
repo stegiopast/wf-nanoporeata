@@ -7,9 +7,9 @@ nextflow.enable.dsl = 2
 nextflow.preview.recursion=true 
 
 include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path ; fetch_latest_bams ; CreateGenomeBamFilesForMerge; CreateTranscriptomeBamFilesForMerge; CopyBedfileAndMetadata } from "./lib/initialize.nf"
-include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome ; MinimapGenomeMergeBam ; MinimapTranscriptomeMergeBam; FindMergedGenomeBams; FindMergedTranscriptomeBams } from "./lib/alignment.nf"
-include { FeatureCount; CleanFeatureCountTable; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
-include { Salmon; CleanSalmonTable; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
+include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome ; MinimapGenomeMergeBam ; MinimapTranscriptomeMergeBam} from "./lib/alignment.nf"
+include { FeatureCount; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
+include { Salmon; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
 include { RunDevelopmentEstimation; CountMappedReads; MergeMappedReadsTable; DefineReadLengthDistribution; UpdateReadLengthDistribution; PublishReadLengthDistribution } from "./lib/qc.nf"
 
 
@@ -29,9 +29,9 @@ workflow {
     //Run gene alignment, annotation and quantification
     //minimap_index = MinimapIndex(samples,file("${params.genome_fasta}"),file("${params.transcriptome_fasta}"))
     minimap_genome_output= MinimapGenome(samples, file("${params.out_dir}/genome_index.mmi"), conversion_output_channel, index_output_channel)
-    fc_output = FeatureCount(minimap_genome_output.aligned_bams, file("${params.genome_gtf}"))
-    cleaned_fc = CleanFeatureCountTable(fc_output.single_fc_df, file("${params.metadata}"))
-    UpdateFeatureCountTable.scan(cleaned_fc.clean_fc)
+    fc_output = FeatureCount(minimap_genome_output.aligned_bams, file("${params.genome_gtf}"), file("${params.metadata}"))
+    //cleaned_fc = CleanFeatureCountTable(fc_output.single_fc_df, file("${params.metadata}"))
+    UpdateFeatureCountTable.scan(fc_output.clean_fc)
     PublishFeatureCountTable(UpdateFeatureCountTable.out)
     UpdateIterator(PublishFeatureCountTable.out)
     RunDevelopmentEstimation(UpdateIterator.out.run_statistics, PublishFeatureCountTable.out.merged_all, file("${params.out_dir}/inner_variability_plot.csv"),file("${params.out_dir}/inner_variability_per_sample.csv"),file("${params.out_dir}/exp_genes_counted_per_sample.csv"))
@@ -42,7 +42,7 @@ workflow {
     //def latest_bams_genome = fetch_latest_bams("${params.out_dir}/bam_genome_merged/")
     //found_genome_bams = FindMergedGenomeBams(minimap_genome_output.aligned_bams)
     // def genome_bams = file("${params.out_dir}/bam_genome_merged/*.bam").collect()
-    MinimapGenomeMergeBam(minimap_genome_output.aligned_bams, channel.fromPath("${params.out_dir}/bam_genome_merged/*.bam").collect())
+    MinimapGenomeMergeBam(minimap_genome_output.aligned_bams)//, Channel.fromPath("${params.out_dir}/bam_genome_merged/*"))
     
 
     //Run read mapping quantification
@@ -57,9 +57,9 @@ workflow {
     
     //Run transcript alignment, annotation and quantification
     minimap_transcript_output = MinimapTranscriptome(samples, file("${params.out_dir}/transcriptome_index.mmi"),conversion_output_channel,index_output_channel)
-    salmon_output = Salmon(minimap_transcript_output.aligned_bams, file("${params.genome_gtf}"), file("${params.transcriptome_fasta}"))
-    cleaned_salmon = CleanSalmonTable(salmon_output.single_salmon_df, file("${params.metadata}"))
-    UpdateSalmonTable.scan(cleaned_salmon.clean_salmon)
+    salmon_output = Salmon(minimap_transcript_output.aligned_bams, file("${params.genome_gtf}"), file("${params.transcriptome_fasta}"), file("${params.metadata}"))
+    //cleaned_salmon = CleanSalmonTable(salmon_output.single_salmon_df, file("${params.metadata}"))
+    UpdateSalmonTable.scan(salmon_output.clean_salmon)
     PublishSalmonTable(UpdateSalmonTable.out)
     UpdateIterator2(PublishSalmonTable.out)
     DESeq2Transcriptome(UpdateIterator2.out.run_statistics,PublishSalmonTable.out.merged_all,file("${params.metadata}"))
@@ -69,8 +69,8 @@ workflow {
     //def latest_bams_transcriptome = fetch_latest_bams("${params.out_dir}/bam_transcriptome_merged/")
     //found_transcriptome_bams = FindMergedTranscriptomeBams(minimap_transcript_output.aligned_bams)
     //def transcriptome_bams = fetch_latest_bams("${params.out_dir}/bam_transcriptome_merged/")
-    MinimapTranscriptomeMergeBam(minimap_transcript_output.aligned_bams, channel.fromPath("${params.out_dir}/bam_transcriptome_merged/*.bam").collect())
-    //Process run time
+    MinimapTranscriptomeMergeBam(minimap_transcript_output.aligned_bams)//, Channel.fromPath("${params.out_dir}/bam_transcriptome_merged/*"))
+    //Process run time^
     // ProcessingTimeRegistration(file("${params.out_dir}/processing_time_table.csv"),minimap_genome_output.timestamp,UpdateIterator.out.timestamp,minimap_transcript_output.timestamp,UpdateIterator2.out.timestamp)
 
 }
