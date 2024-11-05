@@ -25,15 +25,15 @@ with open(sample,'r') as file:
 metadata_df = pd.read_csv(metadata,header = 0,sep="\t")
 samplenames = list(metadata_df["Samples"])
 
-df = pd.DataFrame(np.zeros((125000,len(samplenames))),columns=samplenames)
+df = pd.DataFrame(np.zeros((100000,len(samplenames))),columns=samplenames)
 
 if sample_id in samplenames:
-    print(sample_id)
     for length in line_lengths:
-        print(df[sample_id])
-        print(length)
-        df[sample_id][length] = df[sample_id][length] + 1 
-
+        try:
+            df[sample_id][length] = df[sample_id][length] + 1 
+        except:
+            continue
+        
 df.to_csv(output_file, sep="\t", index = False)
 
 
