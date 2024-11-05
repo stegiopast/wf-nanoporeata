@@ -5,15 +5,16 @@ import java.time.LocalDateTime
 
 
 process RunDevelopmentEstimation{
-    stageInMode "copy"
-    label "nanoporeata"
     publishDir(
         path: "${params.out_dir}",
         mode: 'move'
     )
-    maxRetries 10
+    stageInMode "copy"
+    label "nanoporeata"
     maxForks 1
     cpus 4
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
 
     input:
         val run_statistics
@@ -48,6 +49,7 @@ process CountMappedReads{
         mode: 'copy'
     )
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
     tuple val(ID), path(bam)
     path(bai)
@@ -67,6 +69,8 @@ process MergeMappedReadsTable{
         mode: 'copy'
     )
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
+
     input:
     tuple val(ID), path(count_csv)
     path(metadata)
@@ -91,6 +95,7 @@ process DefineReadLengthDistribution{
     tuple val(ID), path(fastq_file)
     path(metadata)
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     output:
     path("${ID}_read_lengths_${task.index}.csv")
 
@@ -108,9 +113,12 @@ process DefineReadLengthDistribution{
 }
 
 process UpdateReadLengthDistribution{
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
+
     input:
     path(output)
-    maxRetries 10
+    
     output:
     path("final_read_lengths_${task.index}.csv")
 
@@ -124,15 +132,17 @@ process UpdateReadLengthDistribution{
     else
         python ${projectDir}/bin/continue_read_length.py -n $new_table -s $old_table
         mv merged_all_readlengths_temp.csv final_read_lengths_${task.index}.csv
+        find . -type l -delete
     fi
     """
 }
 
 process PublishReadLengthDistribution{
     publishDir(path: "${params.out_dir}/ReadLengthFolder",
-               mode: "copy"
+               mode: "move"
     )
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
     path(final_read_lengths)
 

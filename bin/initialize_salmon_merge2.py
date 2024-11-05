@@ -21,17 +21,18 @@ print(df_temp)
 print(df_temp.columns)
 print(df_temp.shape)
 df_temp["Name"] = [i.split(sep = "|")[0] for i in df_temp["Name"]]
-df_construct = pd.DataFrame([[0 for i in range(len(samplenames))] for k in range(df_temp.shape[0])],columns=samplenames)
-print(df_construct.shape)
-df = pd.concat([df_temp.iloc[:,0:3],df_construct], axis = 1)
-df.columns = ["Name","Length","EffectiveLength"] + samplenames
+
+df = df_temp.iloc[:,0:3]
+df.columns = ["Name","Length","EffectiveLength"]
 print(df.head())
 name_of_sample = input_file
 for samplename in samplenames:
     if samplename in name_of_sample:
-        appended_values = np.array(df.loc[:,samplename]) + np.array(df_temp.iloc[:,-1])
-        df[samplename] = appended_values
+        print(samplename)
+        df[samplename] = np.array(df_temp.iloc[:,-1])
         break
-print(df)
+samplenames_transfer_list = samplenames + ["n" for i in range(df.shape[0] - len(samplenames))]
+df["all_samplenames"] = samplenames_transfer_list
+
 df.to_csv("merged_all_temp.csv",sep="\t",index = False)
 metadata_df.to_csv("metadata.csv",sep="\t",index = False)

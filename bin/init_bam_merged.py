@@ -11,8 +11,18 @@ metadata = options.metadata
 
 metadata_df = pd.read_csv(metadata,header = 0,sep="\t")
 samplenames = list(metadata_df["Samples"])
+
 for sample in samplenames:
-    print(sample)
     bamfile_name = f"{sample}.bam"
     with open(bamfile_name,"w") as file:
         file.write("")
+
+for i in range(1, 97):
+    sample = f"{i:02}"
+    bamfile_name = f"barcode{sample}.bam"
+    with open(bamfile_name,"w") as file:
+        file.write("")
+
+with open("unclassified.bam","w") as file:
+    file.write("")
+

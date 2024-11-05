@@ -10,6 +10,7 @@ process ConvertGtfToDf{
     maxForks 3
     memory "8GB"
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
     path(genome_gtf)
 
@@ -31,6 +32,7 @@ process CopyBedfileAndMetadata{
     maxForks 3
     memory "8GB"
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     stageInMode "copy"
     input:
     path(bedfile)

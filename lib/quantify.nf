@@ -20,41 +20,34 @@ process FeatureCount {
     label "nanoporeata"
     maxForks 1
     cpus 4
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
-        tuple val(ID), path(bam)
+        tuple val(ID), path(bam), val(full_bam)
         path genome_gtf
+        path metadata
     output:
-        tuple val(ID),path("${ID}.${task.index}.csv"), emit: single_fc_df 
- 
+        //tuple val(ID),path("${ID}.${task.index}.csv"), emit: single_fc_df
+        path("feature_counts_${ID}_${task.index}.csv"), emit: clean_fc 
+
     script:
     """
     samtools index ${bam}
 	featureCounts -a "${genome_gtf}" -F 'GTF' -L -T ${params.threads} -o ${ID}.${task.index}.csv ${bam} -T ${task.cpus}
-    """
-}
-
-
-process CleanFeatureCountTable {
-    label "nanoporeata"
-    //publishDir "${params.out_dir}", mode: "copy"
-    maxForks 1
-    input:
-        tuple val(ID),path(single_fc)
-        path metadata
-    output:
-        path("feature_counts_${ID}_${task.index}.csv"), emit: clean_fc
-    script:
-    """
-    python ${projectDir}/bin/initialize_fc_merge.py --input $single_fc --metadata $metadata
+    python ${projectDir}/bin/initialize_fc_merge2.py --input ${ID}.${task.index}.csv --metadata $metadata
     mv merged_all_temp.csv feature_counts_${ID}_${task.index}.csv
+    rm ${ID}.${task.index}.csv
     """
-
 }
+
+
 
 
 process UpdateFeatureCountTable {
     label "nanoporeata"
     maxForks 1
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input: 
         path output
     output:
@@ -65,29 +58,35 @@ process UpdateFeatureCountTable {
     """
     if [ $old_table == "NOSTATE" ]
     then 
-        cat $new_table > feature_counts_latest_${task.index}.csv
-    else
-        python ${projectDir}/bin/continue_fc_merge.py --new_input $new_table --state $old_table
+        python ${projectDir}/bin/continue_fc_merge2.py --new_input $new_table --state $old_table
         mv merged_all_temp.csv feature_counts_latest_${task.index}.csv
+        find . -type l -delete
+    else
+        python ${projectDir}/bin/continue_fc_merge2.py --new_input $new_table --state $old_table
+        mv merged_all_temp.csv feature_counts_latest_${task.index}.csv
+        find . -type l -delete
     fi
     """
 }
 
 process PublishFeatureCountTable {
     label "nanoporeata"
-    publishDir "${params.out_dir}", mode:"copy"
+    publishDir "${params.out_dir}", mode:"move"
     maxForks 1
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
         path merged_csv
     output:
-        path("merged_all.csv"), emit: merged_all
+        val("${params.out_dir}/merged_all.csv"), emit: merged_all
+        path("merged_all.csv")
     script:
     """
     cat $merged_csv > merged_all.csv
     """
-
 }
- 
+
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                                                         // 
 //                                                                                                                                                         //
@@ -103,43 +102,32 @@ process Salmon{
     label "nanoporeata"
     maxForks 1
     cpus 4
-    memory "10GB"
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
-        tuple val(ID), path(bam)
+        tuple val(ID), path(bam), val(full_bam)
         path genome_gtf
         path transcriptome_fasta
-
+        path metadata
     output:
-        tuple val(ID),path("salmon.${ID}.${task.index}"), emit: single_salmon_df 
+        //tuple val(ID),path("salmon.${ID}.${task.index}"), emit: single_salmon_df 
+        path("salmon_${ID}_${task.index}.csv"), emit: clean_salmon
     script:
     """
     samtools index ${bam}
     salmon quant -t ${params.transcriptome_fasta} -l A -a ${bam} -o salmon.${ID}.${task.index} -p ${task.cpus} --minAssignedFrags 0
-    """
-}
-
-
-process CleanSalmonTable{
-    label "nanoporeata"
-    //publishDir "${params.out_dir}", mode: "copy"
-    maxForks 1
-    input:
-        tuple val(ID),path(single_salmon)
-        path metadata
-    output:
-        path("salmon_${ID}_${task.index}.csv"), emit: clean_salmon
-    script:
-    """
-    python ${projectDir}/bin/initialize_salmon_merge.py --input ${single_salmon}/quant.sf --metadata ${metadata}
+    python ${projectDir}/bin/initialize_salmon_merge2.py --input salmon.${ID}.${task.index}/quant.sf --metadata ${metadata}
     mv merged_all_temp.csv salmon_${ID}_${task.index}.csv
+    rm salmon.${ID}.${task.index} -r
     """
 }
-
 
 
 process UpdateSalmonTable{
     label "nanoporeata"
     maxForks 1
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input: 
         path output
     output:
@@ -150,23 +138,28 @@ process UpdateSalmonTable{
     """
     if [ $old_table == "NOSTATE" ]
     then 
-        cat $new_table > salmon_latest_${task.index}.csv
-    else
-        python ${projectDir}/bin/continue_salmon_merge.py --new_input $new_table --state $old_table
+        python ${projectDir}/bin/continue_salmon_merge2.py --new_input $new_table --state $old_table
         mv merged_all_temp.csv salmon_latest_${task.index}.csv
+        find . -type l -delete
+    else
+        python ${projectDir}/bin/continue_salmon_merge2.py --new_input $new_table --state $old_table
+        mv merged_all_temp.csv salmon_latest_${task.index}.csv
+        find . -type l -delete
     fi
     """
-
 }
 
 process PublishSalmonTable{
     label "nanoporeata"
-    publishDir "${params.out_dir}", mode:"copy"
+    publishDir "${params.out_dir}", mode:"move"
     maxForks 1
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
         path merged_csv
     output:
-        path("salmon_merged_absolute.csv"), emit: merged_all
+        val("${params.out_dir}/salmon_merged_absolute.csv"), emit: merged_all
+        path("salmon_merged_absolute.csv")
     script:
     """
     cat $merged_csv > salmon_merged_absolute.csv
@@ -189,9 +182,11 @@ process DESeq2Genome {
     label "R"
     publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
-    cpus 4
+    cpus 8
     maxRetries 10
     memory "10GB"
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
         val run_statistics
         path count_table
@@ -215,6 +210,7 @@ process DESeq2Transcriptome{
     maxForks 1
     cpus 4
     maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
         val run_statistics
         path count_table
@@ -236,7 +232,8 @@ process DTUanalysis{
     label "R"
     publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
-    maxRetries 10 
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
         val transcriptome_done
         path count_table
@@ -267,6 +264,8 @@ process DTUanalysis{
 
 process UpdateIterator{
     publishDir(path: "${params.out_dir}", mode: "copy")
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
     path feature_count_merged
 
@@ -296,6 +295,8 @@ process UpdateIterator{
 
 process UpdateIterator2{
     publishDir(path: "${params.out_dir}", mode: "copy")
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
     path salmon_count_merged
 

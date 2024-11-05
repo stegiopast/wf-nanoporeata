@@ -15,23 +15,20 @@ output_file = options.output_file
 
 metadata_df = pd.read_csv(metadata,header = 0,sep="\t")
 samplenames = list(metadata_df["Samples"])
-print(options.input_file)
-df_temp = pd.read_csv(input_file, sep = "\t", header = 0)
-print(df_temp)
-print(df_temp.columns)
-print(df_temp.shape)
-df_temp["Name"] = [i.split(sep = "|")[0] for i in df_temp["Name"]]
-df_construct = pd.DataFrame([[0 for i in range(len(samplenames))] for k in range(df_temp.shape[0])],columns=samplenames)
-print(df_construct.shape)
-df = pd.concat([df_temp.iloc[:,0:3],df_construct], axis = 1)
-df.columns = ["Name","Length","EffectiveLength"] + samplenames
-print(df.head())
-name_of_sample = input_file
-for samplename in samplenames:
+df_temp = pd.read_csv(input_file, sep = "\t", header = 1)
+name_of_sample = df_temp.columns[-1]
+
+
+for index,samplename in enumerate(samplenames):
+    if index == 0:
+        df = pd.DataFrame({"Geneid":df_temp.iloc[:,0],f"{samplename}":[0 for k in range(df_temp.shape[0])]})
     if samplename in name_of_sample:
-        appended_values = np.array(df.loc[:,samplename]) + np.array(df_temp.iloc[:,-1])
+        df = pd.DataFrame({"Geneid":df_temp.iloc[:,0],f"{samplename}":[0 for k in range(df_temp.shape[0])]})
+        appended_values = np.array(df.loc[:,samplename]) + np.array(df_temp.loc[:,name_of_sample])
         df[samplename] = appended_values
         break
-print(df)
+    
+samplenames_transfer_list = samplenames + ["n" for i in range(df.shape[0] - len(samplenames))]
+df["all_samplenames"] = samplenames_transfer_list
 df.to_csv("merged_all_temp.csv",sep="\t",index = False)
 metadata_df.to_csv("metadata.csv",sep="\t",index = False)

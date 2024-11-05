@@ -48,7 +48,7 @@ process MinimapGenome {
     maxForks 1
     memory "20GB"
     maxRetries 10
-    errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     cpus 8
 
     input:
@@ -59,24 +59,20 @@ process MinimapGenome {
 
 
     output: 
-    tuple val(ID), path("genes_${ID}.out${task.index}.bam"), val(hostpath), emit: aligned_bams 
+    tuple val(ID), val(bampath), val(hostpath), emit: aligned_bams 
+    path("genes_${ID}.out${task.index}.bam")
     path("genes_${ID}.out${task.index}.bam.bai"), emit:aligned_bam_bais
 
     script:
     hostpath = "${params.out_dir}/bam_genome_merged/${ID}.bam"
+    bampath = "${params.out_dir}/${ID}/bam_files/genes_${ID}.out${task.index}.bam"
     """
     if [ ${params.drs} -eq 1 ]
     then
-        minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} genome_index.mmi ${fastq} > output.sam
-        samtools view -hbS output.sam -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
-        rm output.sam
-        #minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hb -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
+        minimap2 --MD -ax splice -uf -k14 -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o genes_${ID}.out${task.index}.bam -
         samtools index genes_${ID}.out${task.index}.bam
     else
-        #minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hb -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam 
-        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} > output.sam
-        samtools view -hbS output.sam -F 3844 | samtools sort -o genes_${ID}.out${task.index}.bam
-        rm output.sam
+        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o genes_${ID}.out${task.index}.bam -
         samtools index genes_${ID}.out${task.index}.bam
     fi
     """
@@ -86,10 +82,11 @@ process MinimapGenome {
 
 process MinimapGenomeMergeBam{
     label "nanoporeata"
-    cpus 2
+    cpus 8
     maxRetries 10
     maxForks 1
     memory "12GB"
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     publishDir(
         path: "${params.out_dir}/bam_genome_merged/",
         mode: 'move'
@@ -108,12 +105,12 @@ process MinimapGenomeMergeBam{
         then
             samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
             samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
-            samtools view -h merged_sorted.bam > merged_sorted.sam
-            grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
-            grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
-            grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
-            samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
-            #rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            samtools view -hb merged_sorted.bam > final.bam
+            #grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
+            #grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
+            #grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
+            #samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            rm -f merged.bam merged_sorted.bam barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
@@ -149,13 +146,13 @@ process MinimapTranscriptome {
     label "nanoporeata"
     publishDir(
         path: "${params.out_dir}/${ID}/bam_files_transcripts/",
-        mode: 'copy'
+        mode: 'move'
     )
     maxForks 1
     memory "20GB"
     maxRetries 10
     cpus 8
-    errorStrategy {sleep(Math.pow(2, task.attempt) * 200 as long); return 'retry'}
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     
     input:
     tuple val(ID), path(fastq)
@@ -164,24 +161,20 @@ process MinimapTranscriptome {
     val done2
 
     output: 
-    tuple val(ID), path("transcripts_${ID}.out${task.index}.bam"), val(hostpath), emit: aligned_bams 
+    tuple val(ID), val(bampath), val(hostpath), emit: aligned_bams 
+    path("transcripts_${ID}.out${task.index}.bam")
     path("transcripts_${ID}.out${task.index}.bam.bai")
 
     script:
     hostpath = "${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
+    bampath = "${params.out_dir}/${ID}/bam_files_transcripts/transcripts_${ID}.out${task.index}.bam"
     """
     if [ ${params.drs} -eq 1 ]
     then
-        #minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 | samtools sort -o transcripts_${ID}.out${task.index}.bam
-        minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} transcriptome_index.mmi ${fastq} > output.sam
-        samtools view -hbS -F 3844 output.sam | samtools sort -o transcripts_${ID}.out${task.index}.bam
-        rm output.sam
+        minimap2 --MD -ax map-ont -uf -k14 -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hb -F 3844 - | samtools sort -o transcripts_${ID}.out${task.index}.bam -
         samtools index transcripts_${ID}.out${task.index}.bam
     else
-        #minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 | samtools sort -o transcripts_${ID}.out${task.index}.bam
-        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} > output.sam
-        samtools view -hbS -F 3844 output.sam | samtools sort -o transcripts_${ID}.out${task.index}.bam
-        rm output.sam
+        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o transcripts_${ID}.out${task.index}.bam -
         samtools index transcripts_${ID}.out${task.index}.bam
     fi
     """
@@ -202,17 +195,17 @@ process MinimapTranscriptome {
 
 process MinimapTranscriptomeMergeBam{
     label "nanoporeata"
-    cpus 2
-    maxRetries 10
+    cpus 8
     maxForks 1
     memory "12GB"
+    maxRetries 10
+    errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     publishDir(
         path: "${params.out_dir}/bam_transcriptome_merged/",
         mode: 'move'
     )
     input:
         tuple val(ID), path(bam), path(bamfile)
-        //file("${params.out_dir}/bam_genome_merged/*.bam")
     output:
         path("${ID}.bam"), emit: bam_merged
         path("${ID}.bam.bai"), emit: bai_merged
@@ -224,25 +217,25 @@ process MinimapTranscriptomeMergeBam{
         then
             samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
             samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
-            samtools view -h merged_sorted.bam > merged_sorted.sam
-            grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
-            grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
-            grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
-            samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
-            #rm -f merged.bam merged_sorted.bam merged_sorted.sam merged_sorted_filtered.sam unique_ids.txt barcode*.bam unclassified.bam
+            samtools view -hb merged_sorted.bam > final.bam
+            #grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
+            #grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
+            #grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
+            #samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            rm -f merged.bam merged_sorted.bam barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
             cp ${bam} final.bam
             samtools sort final.bam > final_sorted.bam
-            #rm -f final.bam barcode*.bam unclassified.bam
+            rm -f final.bam barcode*.bam unclassified.bam
             mv final_sorted.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
     else
         cp ${bam} final.bam
         samtools sort final.bam > final_sorted.bam
-        #rm -f final.bam barcode*.bam unclassified.bam
+        rm -f final.bam barcode*.bam unclassified.bam
         mv final_sorted.bam ${ID}.bam
         samtools index ${ID}.bam
     fi
