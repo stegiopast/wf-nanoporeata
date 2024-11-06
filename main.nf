@@ -26,7 +26,7 @@ workflow {
     ch_watched_final.set{ samples }
 
     //Run gene alignment, annotation and quantification
-    minimap_genome_output= MinimapGenome(samples, file("${params.out_dir}/genome_index.mmi"), conversion_output_channel, index_output_channel)
+    minimap_genome_output= MinimapGenome(samples, file("${params.out_dir}/genome_index.mmi"),file("${params.transcriptome_fasta}"), conversion_output_channel, index_output_channel)
     fc_output = FeatureCount(minimap_genome_output.aligned_bams, file("${params.genome_gtf}"), file("${params.metadata}"))
     UpdateFeatureCountTable.scan(fc_output.clean_fc)
     PublishFeatureCountTable(UpdateFeatureCountTable.out)
@@ -48,7 +48,7 @@ workflow {
 
     
     //Run transcript alignment, annotation and quantification
-    minimap_transcript_output = MinimapTranscriptome(samples, file("${params.out_dir}/transcriptome_index.mmi"),conversion_output_channel,index_output_channel)
+    minimap_transcript_output = MinimapTranscriptome(samples, file("${params.out_dir}/transcriptome_index.mmi"),file("${params.transcriptome_fasta}"),conversion_output_channel,index_output_channel)
     salmon_output = Salmon(minimap_transcript_output.aligned_bams, file("${params.genome_gtf}"), file("${params.transcriptome_fasta}"), file("${params.metadata}"))
 
     UpdateSalmonTable.scan(salmon_output.clean_salmon)

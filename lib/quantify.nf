@@ -37,6 +37,13 @@ process FeatureCount {
     python ${projectDir}/bin/initialize_fc_merge2.py --input ${ID}.${task.index}.csv --metadata $metadata
     mv merged_all_temp.csv feature_counts_${ID}_${task.index}.csv
     rm ${ID}.${task.index}.csv
+    # Checkup if bamfile contains Rescue_read. If yes the counts will be set to 0.
+    export size=\$(samtools view ${bam} | grep Rescue_read | wc -l)
+    if [ \$size -gt 0 ]
+    then
+        awk -F'\t' 'BEGIN {OFS="\t"} {NR==1 || \$2=0; print}' feature_counts_${ID}_${task.index}.csv > feature_counts_${ID}_${task.index}_temp.csv
+        mv feature_counts_${ID}_${task.index}_temp.csv feature_counts_${ID}_${task.index}.csv
+    fi
     """
 }
 
@@ -119,6 +126,13 @@ process Salmon{
     python ${projectDir}/bin/initialize_salmon_merge2.py --input salmon.${ID}.${task.index}/quant.sf --metadata ${metadata}
     mv merged_all_temp.csv salmon_${ID}_${task.index}.csv
     rm salmon.${ID}.${task.index} -r
+    # Checkup if bamfile contains Rescue_read. If yes the counts will be set to 0.
+    export size=\$(samtools view ${bam} | grep Rescue_read | wc -l)
+    if [ \$size -gt 0 ]
+    then
+        awk -F'\t' 'BEGIN {OFS="\t"} {NR==1 || \$4=0.0; print}' salmon_${ID}_${task.index}.csv > salmon_${ID}_${task.index}_temp.csv
+        mv salmon_${ID}_${task.index}_temp.csv salmon_${ID}_${task.index}.csv
+    fi
     """
 }
 

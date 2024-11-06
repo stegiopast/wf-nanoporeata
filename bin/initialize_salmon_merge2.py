@@ -24,15 +24,20 @@ df_temp["Name"] = [i.split(sep = "|")[0] for i in df_temp["Name"]]
 
 df = df_temp.iloc[:,0:3]
 df.columns = ["Name","Length","EffectiveLength"]
-print(df.head())
+
 name_of_sample = input_file
+existed = False
 for samplename in samplenames:
     if samplename in name_of_sample:
         print(samplename)
         df[samplename] = np.array(df_temp.iloc[:,-1])
+        existed = True
         break
+if not existed:
+    df["barcodeXX"] = np.zeros(len(df_temp.iloc[:,-1]))
 samplenames_transfer_list = samplenames + ["n" for i in range(df.shape[0] - len(samplenames))]
 df["all_samplenames"] = samplenames_transfer_list
 
 df.to_csv("merged_all_temp.csv",sep="\t",index = False)
 metadata_df.to_csv("metadata.csv",sep="\t",index = False)
+print(df)

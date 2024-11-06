@@ -18,16 +18,16 @@ samplenames = list(metadata_df["Samples"])
 df_temp = pd.read_csv(input_file, sep = "\t", header = 1)
 name_of_sample = df_temp.columns[-1]
 
-
+existed = False
 for index,samplename in enumerate(samplenames):
-    if index == 0:
-        df = pd.DataFrame({"Geneid":df_temp.iloc[:,0],f"{samplename}":[0 for k in range(df_temp.shape[0])]})
     if samplename in name_of_sample:
         df = pd.DataFrame({"Geneid":df_temp.iloc[:,0],f"{samplename}":[0 for k in range(df_temp.shape[0])]})
         appended_values = np.array(df.loc[:,samplename]) + np.array(df_temp.loc[:,name_of_sample])
         df[samplename] = appended_values
+        existed = True
         break
-    
+if not existed:
+    df = pd.DataFrame({"Geneid":df_temp.iloc[:,0],"barcodeXX":[0 for k in range(df_temp.shape[0])]})
 samplenames_transfer_list = samplenames + ["n" for i in range(df.shape[0] - len(samplenames))]
 df["all_samplenames"] = samplenames_transfer_list
 df.to_csv("merged_all_temp.csv",sep="\t",index = False)

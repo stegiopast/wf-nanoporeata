@@ -54,6 +54,7 @@ process MinimapGenome {
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'genome_index.mmi'
+    path fasta2, stageAs: 'transcriptome.fasta'
     val done
     val done2
 
@@ -75,13 +76,23 @@ process MinimapGenome {
         minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o genes_${ID}.out${task.index}.bam -
         samtools index genes_${ID}.out${task.index}.bam
     fi
+
+    #Checkup filesize of bam and create rescue file if 0 Reads align
+    
     export size=\$(samtools view genes_${ID}.out${task.index}.bam -c)
     if [ \$size -eq 0 ]
     then
-        rm genes_${ID}.out${task.index}.bam genes_${ID}.out${task.index}.bam.bai 
-        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS | samtools sort -o genes_${ID}.out${task.index}.bam -
+        rm -f genes_${ID}.out${task.index}.bam genes_${ID}.out${task.index}.bam.bai 
+        echo @Rescue_read > rescue.fastq
+        echo \$(sed -n '2p' transcriptome.fasta) >> rescue.fastq
+        echo + >> rescue.fastq
+        echo \$(sed -n '2p' transcriptome.fasta | sed -e 's/[A-Z]/I/g') >> rescue.fastq
+        gzip rescue.fastq
+        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi rescue.fastq.gz | samtools view -hbS -F 3884 | samtools sort -o genes_${ID}.out${task.index}.bam -
         samtools index genes_${ID}.out${task.index}.bam
+        rm -f rescue.fastq.gz
     fi
+    rm transcriptome.fasta
     """
 }
 
@@ -123,7 +134,6 @@ process MinimapGenomeMergeBam{
             mv final_sorted.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
-        
     else
         cp ${bam} final.bam
         samtools view -hb -F 3884 final.bam | samtools sort --threads ${task.cpus} - > final_sorted.bam
@@ -150,6 +160,7 @@ process MinimapTranscriptome {
     input:
     tuple val(ID), path(fastq)
     path fasta, stageAs: 'transcriptome_index.mmi'
+    path fasta2, stageAs: 'transcriptome.fasta'
     val done
     val done2
 
@@ -170,13 +181,23 @@ process MinimapTranscriptome {
         minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o transcripts_${ID}.out${task.index}.bam -
         samtools index transcripts_${ID}.out${task.index}.bam
     fi
-    export size=\$(samtools view genes_${ID}.out${task.index}.bam -c)
+
+    #Checkup filesize of bam and create rescue file if 0 Reads align
+    
+    export size=\$(samtools view transcripts_${ID}.out${task.index}.bam -c)
     if [ \$size -eq 0 ]
     then
-        rm transcripts_${ID}.out${task.index}.bam transcripts_${ID}.out${task.index}.bam 
-        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS | samtools sort -o transcripts_${ID}.out${task.index}.bam -
+        rm -f transcripts_${ID}.out${task.index}.bam transcripts_${ID}.out${task.index}.bam.bai
+        echo @Rescue_read > rescue.fastq
+        echo \$(sed -n '2p' transcriptome.fasta) >> rescue.fastq
+        echo + >> rescue.fastq
+        echo \$(sed -n '2p' transcriptome.fasta | sed -e 's/[A-Z]/I/g') >> rescue.fastq
+        gzip rescue.fastq
+        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi rescue.fastq.gz | samtools view -hbS -F 3844 | samtools sort  - > transcripts_${ID}.out${task.index}.bam
         samtools index transcripts_${ID}.out${task.index}.bam
+        rm -f rescue.fastq.gz
     fi
+    rm transcriptome.fasta
     """
 }
 
