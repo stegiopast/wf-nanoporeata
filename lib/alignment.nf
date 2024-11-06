@@ -75,6 +75,13 @@ process MinimapGenome {
         minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o genes_${ID}.out${task.index}.bam -
         samtools index genes_${ID}.out${task.index}.bam
     fi
+    export size=\$(samtools view genes_${ID}.out${task.index}.bam -c)
+    if [ \$size -eq 0 ]
+    then
+        rm genes_${ID}.out${task.index}.bam genes_${ID}.out${task.index}.bam.bai 
+        minimap2 --MD -ax splice -t ${task.cpus} genome_index.mmi ${fastq} | samtools view -hbS | samtools sort -o genes_${ID}.out${task.index}.bam -
+        samtools index genes_${ID}.out${task.index}.bam
+    fi
     """
 }
 
@@ -105,42 +112,28 @@ process MinimapGenomeMergeBam{
         then
             samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
             samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
-            samtools view -hb merged_sorted.bam > final.bam
-            #grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
-            #grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
-            #grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
-            #samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            samtools view -hb -F 3844 merged_sorted.bam > final.bam
             rm -f merged.bam merged_sorted.bam barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
             cp ${bam} final.bam
-            #rm -f barcode*.bam unclassified.bam
-            mv final.bam ${ID}.bam
+            samtools view -hb -F 3884 final.bam | samtools sort --threads ${task.cpus} - > final_sorted.bam
+            rm -f final.bam barcode*.bam unclassified.bam
+            mv final_sorted.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
         
     else
         cp ${bam} final.bam
-        samtools sort final.bam > final_sorted.bam
-        #rm -f final.bam barcode*.bam unclassified.bam
+        samtools view -hb -F 3884 final.bam | samtools sort --threads ${task.cpus} - > final_sorted.bam
+        rm -f final.bam barcode*.bam unclassified.bam
         mv final_sorted.bam ${ID}.bam
         samtools index ${ID}.bam
     fi
     """
 }
 
-// process FindMergedGenomeBams{
-//     input:
-//         tuple val(ID), path(bam)
-//     output:
-//         tuple val(ID), path(bam), emit: aligned_bams
-//         path(files), emit: merged_bams
-//     script:
-//         files="${params.out_dir}/bam_genome_merged/${ID}.bam"
-//     """
-//     """
-// }
 
 process MinimapTranscriptome {
     label "nanoporeata"
@@ -177,20 +170,15 @@ process MinimapTranscriptome {
         minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS -F 3844 - | samtools sort -o transcripts_${ID}.out${task.index}.bam -
         samtools index transcripts_${ID}.out${task.index}.bam
     fi
+    export size=\$(samtools view genes_${ID}.out${task.index}.bam -c)
+    if [ \$size -eq 0 ]
+    then
+        rm transcripts_${ID}.out${task.index}.bam transcripts_${ID}.out${task.index}.bam 
+        minimap2 --MD -ax map-ont -t ${task.cpus} transcriptome_index.mmi ${fastq} | samtools view -hbS | samtools sort -o transcripts_${ID}.out${task.index}.bam -
+        samtools index transcripts_${ID}.out${task.index}.bam
+    fi
     """
 }
-
-// process FindMergedTranscriptomeBams{
-//     input:
-//         tuple val(ID), path(bam)
-//     output:
-//         tuple val(ID), path(bam), emit: aligned_bams
-//         path(files), emit: merged_bams
-//     script:
-//         files="${params.out_dir}/bam_transcriptome_merged/${ID}.bam"
-//     """
-//     """
-// }
 
 
 process MinimapTranscriptomeMergeBam{
@@ -217,24 +205,20 @@ process MinimapTranscriptomeMergeBam{
         then
             samtools merge -f --threads ${task.cpus} -o merged.bam ${ID}.bam ${bam} 
             samtools sort --threads ${task.cpus} merged.bam > merged_sorted.bam
-            samtools view -hb merged_sorted.bam > final.bam
-            #grep '^@' merged_sorted.sam > merged_sorted_filtered.sam
-            #grep -v '^@' merged_sorted.sam | cut -f 1 | sort | uniq -u > unique_ids.txt
-            #grep -F -f unique_ids.txt merged_sorted.sam >> merged_sorted_filtered.sam
-            #samtools view -b merged_sorted_filtered.sam | samtools sort --threads ${task.cpus} - > final.bam
+            samtools view -hb -F 3844 merged_sorted.bam > final.bam
             rm -f merged.bam merged_sorted.bam barcode*.bam unclassified.bam
             mv final.bam ${ID}.bam
             samtools index ${ID}.bam
         else
             cp ${bam} final.bam
-            samtools sort final.bam > final_sorted.bam
+            samtools view -hb -F 3884 final.bam | samtools sort - > final_sorted.bam
             rm -f final.bam barcode*.bam unclassified.bam
             mv final_sorted.bam ${ID}.bam
             samtools index ${ID}.bam
         fi
     else
         cp ${bam} final.bam
-        samtools sort final.bam > final_sorted.bam
+        samtools view -hb -F 3884 final.bam | samtools sort - > final_sorted.bam
         rm -f final.bam barcode*.bam unclassified.bam
         mv final_sorted.bam ${ID}.bam
         samtools index ${ID}.bam

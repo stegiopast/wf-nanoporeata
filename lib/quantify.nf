@@ -33,7 +33,7 @@ process FeatureCount {
     script:
     """
     samtools index ${bam}
-	featureCounts -a "${genome_gtf}" -F 'GTF' -L -T ${params.threads} -o ${ID}.${task.index}.csv ${bam} -T ${task.cpus}
+    featureCounts -a "${genome_gtf}" -F 'GTF' -L -T ${params.threads} -o ${ID}.${task.index}.csv ${bam} -T ${task.cpus}
     python ${projectDir}/bin/initialize_fc_merge2.py --input ${ID}.${task.index}.csv --metadata $metadata
     mv merged_all_temp.csv feature_counts_${ID}_${task.index}.csv
     rm ${ID}.${task.index}.csv
