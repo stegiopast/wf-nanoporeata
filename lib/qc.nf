@@ -108,7 +108,7 @@ process DefineReadLengthDistribution{
         cat "$fastq_file" | awk 'NR%4==2' | awk '{ print length }' > ${ID}_read_length_file${task.index}.txt
     fi
     cat ${ID}_read_length_file${task.index}.txt
-    python ${projectDir}/bin/initialize_read_length.py -s ${ID}_read_length_file${task.index}.txt -n ${ID} -m ${metadata} -o ${ID}_read_lengths_${task.index}.csv
+    python ${projectDir}/bin/initialize_read_length2.py -s ${ID}_read_length_file${task.index}.txt -n ${ID} -m ${metadata} -o ${ID}_read_lengths_${task.index}.csv
     """
 }
 
@@ -128,9 +128,11 @@ process UpdateReadLengthDistribution{
     """
     if [ $old_table == "NOSTATE" ]
     then 
-        cat $new_table > final_read_lengths_${task.index}.csv
+        python ${projectDir}/bin/continue_read_length2.py -n $new_table -s $old_table
+        mv merged_all_readlengths_temp.csv final_read_lengths_${task.index}.csv
+        find . -type l -delete
     else
-        python ${projectDir}/bin/continue_read_length.py -n $new_table -s $old_table
+        python ${projectDir}/bin/continue_read_length2.py -n $new_table -s $old_table
         mv merged_all_readlengths_temp.csv final_read_lengths_${task.index}.csv
         find . -type l -delete
     fi
