@@ -196,7 +196,7 @@ process DESeq2Genome {
     label "R"
     publishDir (path: "${params.out_dir}", mode: 'copy')
     maxForks 1
-    cpus 8
+    cpus 4
     maxRetries 10
     memory "10GB"
     maxRetries 10

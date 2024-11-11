@@ -1131,9 +1131,11 @@ server <- function(input, output, session) {
                                     condition_col = input$design_column, 
                                     first.level = input$feature_A, 
                                     ref.level = input$feature_B,
-                                    cores = max(c(4,round(cores * 0.6)))
+                                    cores = max(c(4,round(cores * 0.6))),
+                                    samps = metadata
       )
       print("DRIMSEQPREP DONE!!!")
+      print(preProcTrans$pre_list)
       print(length(preProcTrans$pre_list))
     } else {
       print(paste0(Sys.time(), ": Analysis not started!"))
@@ -1764,7 +1766,7 @@ server <- function(input, output, session) {
   
 
   output$drim_tab <- renderDT({
-    req(preProcTrans$pre_list)
+    req(preProcTrans$pre_list$res_df)
     res = data.frame(preProcTrans$pre_list$res_df)
     res = na.omit(res)
     res = res[res$adj_pvalue < as.numeric(input$pvalue),]

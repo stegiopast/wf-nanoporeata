@@ -49,7 +49,7 @@ process MinimapGenome {
     memory "20GB"
     maxRetries 10
     errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
-    cpus 8
+    cpus 5
 
     input:
     tuple val(ID), path(fastq)
@@ -100,7 +100,7 @@ process MinimapGenome {
 
 process MinimapGenomeMergeBam{
     label "nanoporeata"
-    cpus 8
+    cpus 5
     maxRetries 10
     maxForks 1
     memory "12GB"
@@ -154,7 +154,7 @@ process MinimapTranscriptome {
     maxForks 1
     memory "20GB"
     maxRetries 10
-    cpus 8
+    cpus 5
     errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     
     input:
@@ -204,7 +204,7 @@ process MinimapTranscriptome {
 
 process MinimapTranscriptomeMergeBam{
     label "nanoporeata"
-    cpus 8
+    cpus 5
     maxForks 1
     memory "12GB"
     maxRetries 10

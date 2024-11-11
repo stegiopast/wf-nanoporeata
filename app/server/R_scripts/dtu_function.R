@@ -1,6 +1,6 @@
 
 
-DRIM_seq_prep <- function(d, condition_col = "Condition", first.level = "a2d3-OE", ref.level = "Ctrl", cores = 4){
+DRIM_seq_prep <- function(d, condition_col = "Condition", first.level = "a2d3-OE", ref.level = "Ctrl", cores = 4,samps = metadata){
   
   ###############################################################################################
   #                                                                                             #
@@ -21,6 +21,17 @@ DRIM_seq_prep <- function(d, condition_col = "Condition", first.level = "a2d3-OE
   #print(design_full)
   #print(colnames(design_full)[2])
   set.seed(1)
+  param = BiocParallel::SerialParam()
+  # d <- dmPrecision(d, design=design_full)
+  # d <- dmFit(d, design=design_full)
+  # d <- dmTest(d, coef=colnames(design_full)[2])
+  samps["sample_id"] = samps$Samples
+  samps["condition"] = samps[condition_col]
+  #print(samps$condition)
+    
+  samps <- samps[which(samps$condition %in% c(first.level,ref.level)),]
+  print(samps)
+      
   
   system.time({
     out3 <- tryCatch(
@@ -45,8 +56,14 @@ DRIM_seq_prep <- function(d, condition_col = "Condition", first.level = "a2d3-OE
   res_txp <- DRIMSeq::results(d, level="feature")
   
   print("DRIM SEQ DONE")
+  print(res_txp)
   
-  return(list(d, res_txp))
+
+  list = list()
+  list$drim = d
+  list$res_df = res_txp
+  list$samps = samps
+  return(list)
 }
 
 
@@ -64,6 +81,14 @@ DRIM_seq_prep <- function(d, condition_col = "Condition", first.level = "a2d3-OE
 
 DTU_special <- function(d_list, condition_col = "Condition", first.level = "a2d3-OE", ref.level = "Ctrl", goi_id = "ENSG00000111640.15",gtf_tab = gtf_table, cores = 4, pvalue_input = 0.05){
   d = d_list$drim
+  counts = counts(d)
+  print(counts)
+  samps = d_list$samps
+  print(samps)
+  samples = colnames(data.frame(counts))
+  samples = samples[3:length(samples)] #Necessary to cut gene_id and feature_id column
+  print(samples)
+  #samps = d_list$samps
   
   res <- DRIMSeq::results(d)
   head(res)
@@ -87,7 +112,6 @@ DTU_special <- function(d_list, condition_col = "Condition", first.level = "a2d3
   goi_df_merged = merge(goi_df,counts(d), by = "feature_id")
   idx <- which(res$gene_id == goi_id)
   selected_d = counts(d)[which(counts(d)$gene_id == res$gene_id[idx]),]
-  samples = samps$sample_id
   feature_ids = unique(selected_d$feature_id)
   plot_dataframe_d = data.frame()
   sum_df = data.frame(sample = as.character(), sum = as.numeric())
@@ -105,7 +129,7 @@ DTU_special <- function(d_list, condition_col = "Condition", first.level = "a2d3
       sample_name = i
       sum_column = as.numeric(sum_df[which(sum_df$sample == i),"sum"])
       percentage = as.numeric(counts_df / sum_column)
-      Condition = as.character(samps[which(samps$Samples == i), "Condition"])
+      Condition = as.character(samps[which(samps$Samples == i), "Conditions"])
       temp_df = cbind(feature_id,counts_df, sample_name, Condition, sum_column, percentage)
       plot_dataframe_d = rbind(plot_dataframe_d,temp_df)
     }

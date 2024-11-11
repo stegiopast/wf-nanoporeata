@@ -25,7 +25,7 @@ with open(sample,'r') as file:
 metadata_df = pd.read_csv(metadata,header = 0,sep="\t")
 samplenames = list(metadata_df["Samples"])
 
-df = pd.DataFrame(np.zeros((100000,len(samplenames))),columns=samplenames)
+df = pd.DataFrame(np.zeros((30000,len(samplenames))),columns=samplenames)
 
 if sample_id in samplenames:
     for length in line_lengths:
