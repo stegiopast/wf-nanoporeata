@@ -99,6 +99,11 @@
                     "description": "“Is sample direct RNA ? ",
                     "default": 1
                 },
+                "port": {
+                    "type": "integer",
+                    "description": "Which port should be allocated?",
+                    "default": 8080
+                },
                 "threads": {
                     "type": "integer",
                     "description": "How many thread you want to use?",

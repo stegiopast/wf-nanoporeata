@@ -123,3 +123,30 @@ process CreateTranscriptomeBamFilesForMerge{
     python ${projectDir}/bin/init_bam_merged.py -m ${metadata}
     """
 }
+
+process ProduceHTML{
+    publishDir(path: "${params.out_dir}/", mode: "copy", overwrite: false)
+    input:
+    path(html_file)
+    val(transcriptome_done)
+    val(transcriptome_done)
+    output:
+    path "Redirect.html", emit: redirection_html
+    script:
+    """
+    sed -e 's/:8080/:${params.port}/' ${html_file} > Redirect.html
+    """
+}
+
+process EvokeRshinyServer{
+    container "stegiopast/shiny:latest"
+    containerOptions "-p ${params.port}:${params.port} -v ${params.out_dir}:/data -v ${projectDir}:/nanoporeata -e 'PORT=${params.port}' -e 'SHINYDATA=/data/' --workdir=/nanoporeata/app/"
+    errorStrategy 'ignore'
+    publishDir(path: "${params.out_dir}", mode: "copy", overwrite: false)
+    input:
+    path(redirection_html)
+    script:
+    """
+    Rscript app.R
+    """
+}

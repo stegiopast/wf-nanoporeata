@@ -6,7 +6,7 @@ import java.time.LocalDateTime
 nextflow.enable.dsl = 2
 nextflow.preview.recursion=true 
 
-include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path ; fetch_latest_bams ; CreateGenomeBamFilesForMerge; CreateTranscriptomeBamFilesForMerge; CopyBedfileAndMetadata } from "./lib/initialize.nf"
+include { ConvertGtfToDf; CreateFeaturePercentiles; start_watch_path ; fetch_latest_bams ; CreateGenomeBamFilesForMerge; CreateTranscriptomeBamFilesForMerge; CopyBedfileAndMetadata; EvokeRshinyServer; ProduceHTML} from "./lib/initialize.nf"
 include { MinimapIndex ; MinimapGenome ; MinimapTranscriptome ; MinimapGenomeMergeBam ; MinimapTranscriptomeMergeBam} from "./lib/alignment.nf"
 include { FeatureCount; UpdateFeatureCountTable; PublishFeatureCountTable; DESeq2Genome ; DESeq2Transcriptome; DTUanalysis; UpdateIterator ; UpdateIterator2 } from "./lib/quantify.nf"
 include { Salmon; UpdateSalmonTable; PublishSalmonTable } from "./lib/quantify.nf"
@@ -63,7 +63,8 @@ workflow {
     
     //Process run time
     // ProcessingTimeRegistration(file("${params.out_dir}/processing_time_table.csv"),minimap_genome_output.timestamp,UpdateIterator.out.timestamp,minimap_transcript_output.timestamp,UpdateIterator2.out.timestamp)
-
+    ProduceHTML(file("${projectDir}/app/Live_reporting.html"),DESeq2Genome.out.dea_genome_done,DESeq2Transcriptome.out.dea_transcriptome_done)
+    EvokeRshinyServer(ProduceHTML.out.redirection_html)
 }
 
 //messages to display once the workflow has completed
