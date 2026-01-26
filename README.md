@@ -49,13 +49,12 @@ For usage you need to create a metadata file with necessary information. If you 
 
  Parameter | Datatype
  :---: | :---: 
- Path to main directory | path 
- Path to a metadata/description file  | path 
- Path to Reference genome file  | path
- Path to Reference transcriptome file  | path 
- GTF annotation file  | path 
- BED annotation file | path 
- Output directory | path
+ Path to sequencing directory | path 
+ Path to a metadata tsv | path 
+ Path to Reference genome fasta (Gencode) | path
+ Path to Reference transcriptome fasta (Gencode) | path 
+ GTF annotation (Gencode) | path 
+ BED annotation (RseQC) | path 
  Number of threads | integer
  Run preprocessing | bool 
  Barcoded | bool  
