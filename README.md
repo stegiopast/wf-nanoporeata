@@ -41,9 +41,9 @@ For usage you need to create a metadata file with necessary information. If you 
  Samples | Conditions | Replicates
  :---: | :---: | :---: 
  Sample1 | Cond1 | R1 
- Sample2 | Cond2 | R1 
+ Sample2 | Cond2 | R2 
  Sample3 | Cond1 | R1 
- Sample4 | Cond2 | R1 
+ Sample4 | Cond2 | R2 
 
 ### Inputs via Epi2ME
 
