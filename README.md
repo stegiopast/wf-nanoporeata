@@ -38,12 +38,12 @@ Before running/exploiting real experiments with NanopoReaTA, we highly recommend
 #### Example metadata file
 For usage you need to create a metadata file with necessary information. If you have barcoded sample your samplnames must be "barcode01, barcode02 etc."
 
- Samples | Condition | Replicate | Custom 
- :---: | :---: | :---: | :---: 
- Sample1 | Cond1 | R1 | male
- Sample2 | Cond2 | R1 | female
- Sample3 | Cond1 | R1 | female
- Sample4 | Cond2 | R1 | male
+ Samples | Conditions | Replicates
+ :---: | :---: | :---: 
+ Sample1 | Cond1 | R1 
+ Sample2 | Cond2 | R1 
+ Sample3 | Cond1 | R1 
+ Sample4 | Cond2 | R1 
 
 ### Inputs via Epi2ME
 
