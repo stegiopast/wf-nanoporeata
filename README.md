@@ -47,7 +47,7 @@ For usage you need to create a metadata file with necessary information. If you 
 
 ### Inputs via Epi2ME
 
- Parameter | Datatype | Comments 
+ Parameter | Datatype
  :---: | :---: | :---:
  Path to main directory | path 
  Path to a metadata/description file  | path 
