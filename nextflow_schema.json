@@ -1,9 +1,9 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
-    "title": "NanopoReaTA_hackathon",
-    "workflow_title": "NanopoReaTA_hackatho,",
-    "description": "Nextflow workflow for running NanopoReaTA.",
+    "title": "NanopoReaTA",
+    "workflow_title": "NanopoReaTA",
+    "description": "Nextflow workflow to run real-tiome transcriptional analysis",
     "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo.tar.gz",
     "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo/aws.nextflow.config",
     "url": "https://github.com/Nanopore-Hackathon/NanopoReaTA_hackathon",
