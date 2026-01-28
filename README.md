@@ -19,10 +19,7 @@ Hardware | Min. number
  :---: |  :---:
 RAM | 64GB 
 Threads | 12 
-**Biological input** | 
-Total number of samples | 4
-Number of conditions | 2
-Min. number of samples per condition | 2
+
 
 ## User guide
 To use NanopoReaTA [Epi2Me](https://labs.epi2me.io/downloads/), [Nextflow](https://www.nextflow.io/docs/latest/install.html) and [Docker](https://docs.docker.com/engine/install/) must be installed.
