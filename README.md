@@ -141,11 +141,14 @@ Test data is additionally available on the ENA (European Nucleotide Archive) wit
 Please note that one will have to reconstruct the folder structure of the MinKnow output using barcoded samples when dowloading files from ENA to use NanopoReaTA properly.
 
 
-
 Examples: ***Experiment_folder**/Sample_folder/Identifier/fastq_pass/barcodeXY/run_xyz_999.fastq* with (barcode01-barcode04). Barcode01 + barcode02 are HEK293 cDNA samples and barcode03-04 are HeLa cDNA samples.  
 
 The metadata file can be found under https://github.com/AnWiercze/NanopoReaTA/blob/master/example_conf_files/example_metadata.txt.
 
+## Reference data
+In the below provided repository we store the reference data we use in house. The Human and Mouse reference is based on data provided by gencode [GENCODE](https://www.gencodegenes.org/) and [RSeQC](https://sourceforge.net/projects/rseqc/). The Yeast reference was suited by us customly to mimic the structure provided by [GENCODE](https://www.gencodegenes.org/) and [RSeQC](https://sourceforge.net/projects/rseqc/). In order to use NanopoReaTA all of these references must be provided on your local machine. 
+
+Link to [Seafile Repository](https://seafile.rlp.net/d/2d92d633bd474141af81/)
 
 ## Publications
 
