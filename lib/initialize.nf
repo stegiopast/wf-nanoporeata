@@ -8,7 +8,6 @@ process ConvertGtfToDf{
         mode: 'move'
     )
     maxForks 3
-    memory "8GB"
     maxRetries 10
     errorStrategy {sleep(Math.pow(2, task.attempt) * 20 as long); return 'retry'}
     input:
