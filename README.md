@@ -150,7 +150,7 @@ In the below provided repository we store the reference data we use in house. Th
 
 Link to [Seafile Repository](https://seafile.rlp.net/d/2d92d633bd474141af81/)
 
-## Publications
+## Publications & Citation
 
 This is an derivative of the software published in Oxford Bioinformatics:
 
@@ -161,6 +161,7 @@ An application paper of the original NanopoReaTA has been published in eLife:
 Tamer Butto, Stefan Pastore, Max Müller, Kaushik Viswanathan Iyer, Marko Jörg, Julia Brechtel, Stefan Mündnich, Anna Wierczeiko, Kristina Friedland, Mark Helm, Marie-Luise Winz, Susanne Gerber
 2024, Real-time transcriptomic profiling in distinct experimental conditions, eLife13:RP98768, https://doi.org/10.7554/eLife.98768.2
 
+Please cite these papers whenever the applicaiton was in use. 
 
 ## References
 
